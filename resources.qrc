@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>images/logo.png</file>
+        <file>images/logo1.png</file>
+        <file>images/logo2.png</file>
+        <file>images/logo3.png</file>
+        <file>images/圆角-层压结构高速成像检测系统.png</file>
+        <file>images/层压结构高速成像检测系统.png</file>
+    </qresource>
+</RCC>

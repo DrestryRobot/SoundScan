@@ -1,0 +1,22 @@
+diff a/UI/UT/gate_widget.cpp b/UI/UT/gate_widget.cpp	(rejected hunks)
+@@ -320,15 +320,20 @@
+  void Gate_widget::on_SynAcqisitBox_currentIndexChanged(int index)
+  {
+      if (currentGate == GATE::GATE_I) {
+ -        if (index) { // 开启同步采集
+ -            config.setGateISyncSample(true);
+ -        } else { // 关闭同步采集
+ -            config.setGateISyncSample(false);
+ -        }
+ +        config.setGateISyncSample(index);
+      }
+++<<<<<<< Updated upstream
+ +    emit App::getInstance()->signal_showhideGatestatus(config.getCurrentServerId());
+ +    emit App::getInstance()->signal_GateView_Refresh(config.getCurrentServerId());
+++=======
++     emit App::getInstance()->signal_showhideGatestatus();
++     emit App::getInstance()->signal_GateView_Refresh();
+++>>>>>>> Stashed changes
+  }
+  
+  void Gate_widget::on_StartSpinBox_editingFinished()

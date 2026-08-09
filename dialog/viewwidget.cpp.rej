@@ -1,0 +1,10 @@
+diff a/dialog/viewwidget.cpp b/dialog/viewwidget.cpp	(rejected hunks)
+@@ -283,7 +283,7 @@
+         xAxis->append(a[i]->label, a[i]->pos);
+     }
+     QList<QPointF> points;
+-    const int cnt = beam_point;
++    const int cnt = value.beam_point;
+     int start = (id_beam - 1) * cnt;
+     for (auto i = 0; i < cnt; i++, start++) {
+         if (start > imageData.size()) {
