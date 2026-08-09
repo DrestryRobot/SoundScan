@@ -94,14 +94,8 @@ MainWindow::MainWindow(QWidget *parent)
     // 加载系统参数
     loadParameters();
 
-    // 启动PLC的ADS通讯（后台线程，无硬件时不阻塞界面）
-    m_adsThread = new QThread(this);
-    m_adsThread->setObjectName(QStringLiteral("AdsConnectThread"));
-    connect(m_adsThread, &QThread::started, [this]() {
-        adsClient.AdsConnectRemote();
-        m_adsThread->quit();
-    });
-    m_adsThread->start();
+    // 启动PLC的ADS通讯
+    adsClient.AdsConnectRemote();
 
     // 启动KUKA的UDP通讯
     m_udpThread = new QThread(this);
@@ -143,11 +137,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    // 停止后台ADS连接线程
-    if (m_adsThread) {
-        m_adsThread->quit();
-        m_adsThread->wait(3000);
-    }
     delete ui;
 }
 
@@ -177,13 +166,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     // 停止Delmia线程
     m_workerThread.quit();
-    m_workerThread.wait(3000);
+    m_workerThread.wait();
 
     // 停止3DChecker线程
     if (m_3dThread && m_3dThread->isRunning()) {
         m_isRunning = false;
         m_3dThread->quit();
-        m_3dThread->wait(3000);
+        m_3dThread->wait();
     }
 
     tcp_ok = false;

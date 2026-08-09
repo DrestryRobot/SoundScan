@@ -325,7 +325,6 @@ private:
     UdpServer* server;
     TcpServer* kuka;
     QThread *m_udpThread = nullptr;
-    QThread *m_adsThread = nullptr;
     QThread *m_tcpThread = nullptr;
     bool x_daowei = true;
     bool y_daowei = true;

@@ -30,7 +30,6 @@ public:
     void AdsConnectLocal();                                 //行为：与本地进行ADS通信
     void AdsConnectRemote();                                //行为：与远端进行ADS通信
     void getRoboMotionInfo();                               //行为：读取机器人运动信息
-    bool isConnected() const { return m_connected; }        //是否已成功建立ADS连接
     float getFloatVal(int offsetAddr);
     void setFloatVal(int offsetAddr, float setVal);
     short getIntVal(int offsetAddr);
@@ -46,7 +45,6 @@ private:
     long nErr,nPort;
     USHORT  nAdsState;        //PLC状态信息
     USHORT  nDeviceState;
-    bool m_connected = false; //ADS连接成功标志
 };
 
 #endif // ADS_CLIENT_H

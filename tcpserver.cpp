@@ -21,6 +21,8 @@ TcpServer::~TcpServer()
 
 void TcpServer::startudp()
 {
+    QThread::msleep(500);
+
     connect(this, &TcpServer::newthreadstartsignals, this, &TcpServer::newthreadstartslots);
     emit newthreadstartsignals();
 }

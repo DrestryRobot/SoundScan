@@ -10,11 +10,6 @@ void ads_client::AdsConnectLocal()
     pAddr = &Addr;
 
     nPort = AdsPortOpen();
-    if (nPort == 0) {
-        m_connected = false;
-        qDebug() << "ADS local port open failed";
-        return;
-    }
     nErr = AdsGetLocalAddress(pAddr);
     if (nErr)
         qDebug() << "错误：获取本地ADS地址失败：" << nErr;
@@ -24,7 +19,6 @@ void ads_client::AdsConnectLocal()
     pAddr->port = 851; // 端口设置在打开之后
 
     nErr = AdsSyncReadStateReq(pAddr, &nAdsState, &nDeviceState);
-    m_connected = (nErr == 0);
     if (nErr)
         qDebug() << "错误：读取PLC状态失败：" << nErr;
     else {
@@ -50,15 +44,9 @@ void ads_client::AdsConnectRemote()
     Addr = {{192,168,10,22,1,1}}; // 定义AMS地址变量
     pAddr = &Addr;
     nPort = AdsPortOpen();
-    if (nPort == 0) {
-        m_connected = false;
-        qDebug() << "ADS port open failed (TwinCAT not installed?)";
-        return;
-    }
     pAddr->port = 851;
 
     nErr = AdsSyncReadStateReq(pAddr, &nAdsState, &nDeviceState);
-    m_connected = (nErr == 0);
     if (nErr)
         // qDebug() << "错误：读取PLC状态失败：" << nErr;
         qDebug() << "PLC系统运行错误或未启动";
@@ -82,13 +70,11 @@ void ads_client::AdsConnectRemote()
 
 void ads_client::getRoboMotionInfo()
 {
-    if (!m_connected) return;
     AdsSyncReadReq(pAddr, 0x4020, 100, sizeof(g_RoboMotionInfo), &g_RoboMotionInfo);
 }
 
 float ads_client::getFloatVal(int offsetAddr)
 {
-    if (!m_connected) return 0.0f;
     float getVal = 0.0f;
 
     AdsSyncReadReq(pAddr, 0x4020, offsetAddr, sizeof(float), &getVal);
@@ -98,13 +84,11 @@ float ads_client::getFloatVal(int offsetAddr)
 
 void ads_client::setFloatVal(int offsetAddr, float setVal)
 {
-    if (!m_connected) return;
     AdsSyncWriteReq(pAddr, 0x4020, offsetAddr, sizeof(float), &setVal);
 }
 
 short ads_client::getIntVal(int offsetAddr)
 {
-    if (!m_connected) return 0;
     short getVal = 0;
 
     AdsSyncReadReq(pAddr, 0x4020, offsetAddr, sizeof(short), &getVal);
@@ -114,7 +98,6 @@ short ads_client::getIntVal(int offsetAddr)
 
 bool ads_client::getBoolVal(int offsetAddr)
 {
-    if (!m_connected) return false;
     bool getVal = false;
 
     AdsSyncReadReq(pAddr, 0x4020, offsetAddr, sizeof(bool), &getVal);
@@ -124,7 +107,6 @@ bool ads_client::getBoolVal(int offsetAddr)
 
 void ads_client::setIntVal(int offsetAddr, short setVal)
 {
-    if (!m_connected) return;
     AdsSyncWriteReq(pAddr, 0x4020, offsetAddr, sizeof(short), &setVal);
 }
 
