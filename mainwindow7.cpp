@@ -1,5 +1,6 @@
 #include "mainwindow7.h"
 #include "ui_mainwindow7.h"
+#include <vtkOutputWindow.h>
 
 // extern double amp[], tof[], si;
 
@@ -392,6 +393,8 @@ void MainWindow7::initSlot()
 // 初始化VTK
 void MainWindow7::initVTK()
 {
+    // 禁止 VTK 弹出独立输出窗口（错误信息不再弹窗）
+    vtkOutputWindow::GetInstance()->SetDisplayModeToNever();
     // 创建渲染器
     renderer = vtkSmartPointer<vtkRenderer>::New();
     renderer->SetBackground(0, 0, 0);
