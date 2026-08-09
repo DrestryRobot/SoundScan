@@ -4,6 +4,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets axcontainer opengl
 
 CONFIG += c++17
 
+# Force qmake to emit absolute paths in Makefiles. Fixes
+# "dependent '..\..\..\..\..\Qt\...qspinbox.h' does not exist"
+# when the build directory is too deep for relative paths.
+QMAKE_PROJECT_DEPTH = 0
+
 TRANSLATIONS += $$PWD/phaselink_CN.ts $$PWD/phaselink_EN.ts
 
 # 指定Beckhoff的头文件和库目录
