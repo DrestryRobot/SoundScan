@@ -38,12 +38,9 @@
 #include "debugoutput.h"
 #include "delmiaworker.h"
 
-// #include "mainwindow7.h"
-
 enum GATE { GATE_A, GATE_B, GATE_C, GATE_I };
 enum GATE_Sync { Sync_false, Sync_gate_I, Sync_gate_A, Sync_gate_B };
 enum class ConState { Unknown, Connected, Unconnected, Failed };
-
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -83,9 +80,9 @@ private:
 
     void update();                           // 实时更新信息
 
-    void saveParameters();               // 保存系统参数
+    void saveParameters();                   // 保存系统参数
 
-    void loadParameters();               // 加载系统参数
+    void loadParameters();                   // 加载系统参数
 
     void savePoseData(bool showPopup);       // 保存点位参数
 
@@ -317,10 +314,7 @@ private slots:
 private:
 
     Ui::MainWindow *ui;
-
-
-    // MainWindow7 *mainWindow7 = nullptr;
-
+    
     // 运动控制
     UdpServer* server;
     TcpServer* kuka;
@@ -384,11 +378,6 @@ private:
     // 路径仿真
     QThread m_workerThread;
     DelmiaWorker *m_worker;
-    // QAxObject* catia;
-    // QAxObject* documents;
-    // QAxObject* partDoc;
-    // QAxObject* processDoc;
-    // QAxObject* productDoc;
 
     QMap<QString, qint64> m_docOpenTime;
 
@@ -447,10 +436,6 @@ ENDIF
 $OUT[100]=TRUE
 
 )";
-
-
-
-
 
 };
 

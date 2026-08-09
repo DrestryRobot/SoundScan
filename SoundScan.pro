@@ -33,20 +33,9 @@ LIBS += -L"C:\LibKuka3D\lib" -lLibKuka3D
 INCLUDEPATH += C:/Users/23714/AppData/Local/Programs/Python/Python313/include
 LIBS += -LC:/Users/23714/AppData/Local/Programs/Python/Python313/libs -lpython313
 
-
 # 链接 VTK 头文件和库目录
 INCLUDEPATH += $$"C:/Program Files (x86)/VTK/include/vtk-9.6"
 LIBS += -L$$"C:/Program Files (x86)/VTK/lib"
-
-# ===== WebGPU 支持（VTK 9.6+） =====
-# 如果启用了 WebGPU，添加对应的库
-# 注意：需要先编译 VTK 时启用 -DVTK_ENABLE_WEBGPU=ON
-contains(DEFINES, VTK_WEBGPU_ENABLED) {
-    message("Building with VTK WebGPU support")
-    DEFINES += VTK_HAS_WEBGPU
-    LIBS += -lvtkRenderingWebGPU-9.6
-    LIBS += -lvtkWebGPUCompute-9.6
-}
 
 LIBS += -lvtkGUISupportQt-9.6 \
         -lvtkRenderingQt-9.6 \
