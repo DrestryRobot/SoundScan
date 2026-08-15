@@ -1,5 +1,5 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+﻿#ifndef CONFIGWINDOW_H
+#define CONFIGWINDOW_H
 
 #include <QMainWindow>
 #include <QAxObject>
@@ -40,22 +40,22 @@
 
 enum GATE { GATE_A, GATE_B, GATE_C, GATE_I };
 enum GATE_Sync { Sync_false, Sync_gate_I, Sync_gate_A, Sync_gate_B };
-enum class ConState { Unknown, Connected, Unconnected, Failed };
+enum class ConfigState { Unknown, Connected, Unconnected, Failed };
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
-class MainWindow;
+class ConfigWindow;
 }
 QT_END_NAMESPACE
 
-class MainWindow : public QMainWindow
+class ConfigWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    ConfigWindow(QWidget *parent = nullptr);
 
-    ~MainWindow();
+    ~ConfigWindow();
 
     void on_pushButton_9();                  // 扫描开始（外部调用）
 
@@ -313,7 +313,7 @@ private slots:
 
 private:
 
-    Ui::MainWindow *ui;
+    Ui::ConfigWindow *ui;
     
     // 运动控制
     UdpServer* server;
@@ -326,6 +326,8 @@ private:
     bool x_flag = false;
     bool y_flag = false;
     bool scan_continue_flag = true;
+    // 扫描开始后等待“机器人开始扫板”信号，信号到达才触发 3DScan 开始绘制
+    bool m_scanStartPending = false;
 
     // 电机失能检测
     double m_lastCheckX = 0.0;
@@ -334,7 +336,7 @@ private:
 
     // 超声扫描
     Client &config;
-    ConState IsConnect = ConState::Unconnected;
+    ConfigState IsConnect = ConfigState::Unconnected;
     DataProcessor *m_dataProcessor = nullptr;
 
     QThread *m_processorThread = nullptr;
@@ -439,4 +441,4 @@ $OUT[100]=TRUE
 
 };
 
-#endif // MAINWINDOW_H
+#endif // CONFIGWINDOW_H

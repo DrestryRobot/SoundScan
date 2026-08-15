@@ -1,11 +1,11 @@
-#ifndef MAINWINDOW5_H
+﻿#ifndef MAINWINDOW5_H
 #define MAINWINDOW5_H
 
 #include <client.h>
 #include <QMainWindow>
 #include <QDockWidget>
 #include "datadispatch.h"
-#include <mainwindow.h>
+#include <configwindow.h>
 #include "ui_mainwindow5.h"
 #include "dialog/viewmodel.h"
 #include "dialog/viewwidget.h"
@@ -26,9 +26,10 @@ public:
 
     ~MainWindow5();
 
-     static MainWindow5 *s_instance;
+    static MainWindow5 *s_instance;
 
-    void setMainWindow(MainWindow *mainWin) { mainWindow = mainWin; }
+    void setMainWindow(ConfigWindow *mainWin) { mainWindow = mainWin; }
+    MainWindow7 *getMainWindow7() const { return mainWindow7; }
 
     void onDataPacket(const QByteArray &data, int deviceId);
 private:
@@ -57,11 +58,11 @@ private slots:
 private:
     Ui::MainWindow5 *ui;
 
-    MainWindow *mainWindow = nullptr;
+    ConfigWindow *mainWindow = nullptr;
 
     Client &config;
     bool IsScaning = false;
-    ConState IsConnect = ConState::Unconnected;
+    ConfigState IsConnect = ConfigState::Unconnected;
     QTranslator lang;
     QVector<int> AmpData; // 保存C扫的测量值幅值数据
     std::string ipAddress;

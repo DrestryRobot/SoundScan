@@ -1,10 +1,6 @@
 <RCC>
     <qresource prefix="/images">
-        <file>images/logo.png</file>
-        <file>images/logo1.png</file>
-        <file>images/logo2.png</file>
         <file>images/logo3.png</file>
         <file>images/splash1.png</file>
-        <file>images/splash2.png</file>
     </qresource>
 </RCC>

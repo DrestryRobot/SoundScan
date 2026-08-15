@@ -26,3 +26,7 @@ ui_*.h
 
 # Editor-generated compile database (machine-specific paths)
 compile_commands.json
+
+# Independent nested git repositories (managed in their own repos)
+3DScan/
+phaselink_code/
