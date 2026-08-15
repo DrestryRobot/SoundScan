@@ -1,5 +1,5 @@
-﻿#ifndef CONFIGWINDOW_H
-#define CONFIGWINDOW_H
+#ifndef MAINWINDOW1_H
+#define MAINWINDOW1_H
 
 #include <QMainWindow>
 #include <QAxObject>
@@ -44,18 +44,18 @@ enum class ConfigState { Unknown, Connected, Unconnected, Failed };
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
-class ConfigWindow;
+class MainWindow1;
 }
 QT_END_NAMESPACE
 
-class ConfigWindow : public QMainWindow
+class MainWindow1 : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    ConfigWindow(QWidget *parent = nullptr);
+    MainWindow1(QWidget *parent = nullptr);
 
-    ~ConfigWindow();
+    ~MainWindow1();
 
     void on_pushButton_9();                  // 扫描开始（外部调用）
 
@@ -313,7 +313,7 @@ private slots:
 
 private:
 
-    Ui::ConfigWindow *ui;
+    Ui::MainWindow1 *ui;
     
     // 运动控制
     UdpServer* server;
@@ -441,4 +441,4 @@ $OUT[100]=TRUE
 
 };
 
-#endif // CONFIGWINDOW_H
+#endif // MAINWINDOW1_H

@@ -1,6 +1,6 @@
-﻿#include "configwindow.h"
-#include "mainwindow5.h"
-#include "ui_configwindow.h"
+#include "mainwindow1.h"
+#include "mainwindow2.h"
+#include "ui_mainwindow1.h"
 #include "datadispatch.h"
 #include "3DScan/scandata.h"
 
@@ -55,9 +55,9 @@ namespace {
     }
 }
 
-ConfigWindow::ConfigWindow(QWidget *parent)
+MainWindow1::MainWindow1(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::ConfigWindow)
+    , ui(new Ui::MainWindow1)
     , config(Client::getInstance())
 {
     // 初始化UI界面
@@ -114,7 +114,7 @@ ConfigWindow::ConfigWindow(QWidget *parent)
 
     // 启动UI界面的实时更新
     QTimer *timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &ConfigWindow::update);
+    connect(timer, &QTimer::timeout, this, &MainWindow1::update);
     timer->start(100);
 
     // 初始化3DChecker信号
@@ -138,7 +138,7 @@ ConfigWindow::ConfigWindow(QWidget *parent)
     ui->lineEdit_4->setPlaceholderText(tr("显示保存和关闭的文件路径"));
 }
 
-ConfigWindow::~ConfigWindow()
+MainWindow1::~MainWindow1()
 {
     // 停止后台ADS连接线程
     if (m_adsThread) {
@@ -148,7 +148,7 @@ ConfigWindow::~ConfigWindow()
     delete ui;
 }
 
-void ConfigWindow::closeEvent(QCloseEvent *event)
+void MainWindow1::closeEvent(QCloseEvent *event)
 {
     DataDispatch::removeProcessor(m_dataProcessor);
 
@@ -192,16 +192,16 @@ void ConfigWindow::closeEvent(QCloseEvent *event)
     saveParameters();
 
     // 龙门电机失能
-    ConfigWindow::on_pushButton_28_clicked();
+    MainWindow1::on_pushButton_28_clicked();
 
     // 扫描结束
-    ConfigWindow::on_pushButton_20_clicked();
+    MainWindow1::on_pushButton_20_clicked();
 
     event->accept();
 }
 
 // 初始化超声界面
-void ConfigWindow::initWidget()
+void MainWindow1::initWidget()
 {
     m_processorThread = new QThread(this);
     m_processorThread->setObjectName(QStringLiteral("DataProcessorThread"));
@@ -264,7 +264,7 @@ void ConfigWindow::initWidget()
     ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    connect(ui->tableWidget, &QTableWidget::cellChanged, this, &ConfigWindow::onCellChanged);
+    connect(ui->tableWidget, &QTableWidget::cellChanged, this, &MainWindow1::onCellChanged);
 
     connect(App::getInstance(), &App::signal_tcgChanged, this, [this] {
 
@@ -285,7 +285,7 @@ void ConfigWindow::initWidget()
 }
 
 // 初始化超声信号
-void ConfigWindow::initSlot()
+void MainWindow1::initSlot()
 {
     config.setDataPacketCallback(DataDispatch::dataPacketCallback);
     QMetaObject::invokeMethod(m_dataProcessor, [=]() {
@@ -323,9 +323,9 @@ void ConfigWindow::initSlot()
                 getcurrentPara();
             });
 
-    connect(App::getInstance(), &App::signal_Connected, this, &ConfigWindow::refreshgroup);
+    connect(App::getInstance(), &App::signal_Connected, this, &MainWindow1::refreshgroup);
 
-    connect(App::getInstance(), &App::refresh_Allpara, this, &ConfigWindow::getcurrentPara);
+    connect(App::getInstance(), &App::refresh_Allpara, this, &MainWindow1::getcurrentPara);
 
     connect(App::getInstance(), &App::signal_Connected, this, [this] {
         bool sync = config.getGateISyncSample();
@@ -375,7 +375,7 @@ void ConfigWindow::initSlot()
     m_dataProcessor->start();
 }
 
-void ConfigWindow::getcurrentPara()
+void MainWindow1::getcurrentPara()
 {
     // 基本
     ui->PRFSpinBox->blockSignals(true);
@@ -553,7 +553,7 @@ void ConfigWindow::getcurrentPara()
     ui->Btn_right->blockSignals(false);
 }
 
-void ConfigWindow::setBtnchecked(bool check)
+void MainWindow1::setBtnchecked(bool check)
 {
     if (check) {
         ui->Btn_left->click();
@@ -563,13 +563,13 @@ void ConfigWindow::setBtnchecked(bool check)
 }
 
 // 初始化仿真状态
-void ConfigWindow::initDelmiaStatus()
+void MainWindow1::initDelmiaStatus()
 {
     QMetaObject::invokeMethod(m_worker, "doGetCurrentDocumentInfo", Qt::QueuedConnection);
 }
 
 // 初始化仿真信号
-void ConfigWindow::initDelmiaSlot()
+void MainWindow1::initDelmiaSlot()
 {
     // 连接信号
     connect(m_worker, &DelmiaWorker::currentDocumentInfo, this, [this](const QString &text) {
@@ -627,7 +627,7 @@ void ConfigWindow::initDelmiaSlot()
     // 1. 文件创建完成信号 - 更新四个点
     connect(m_worker, &DelmiaWorker::projectFilesCreated,
             this, [this](const QString &projectName, const QString &partZBDocName) {
-                qDebug() << "[ConfigWindow] 收到文件创建完成信号，开始更新四个点";
+                qDebug() << "[MainWindow1] 收到文件创建完成信号，开始更新四个点";
 
                 // 计算并更新 ZB Part 的四个点
                 if (!calculateAndUpdateZBFourPoints(projectName)) {
@@ -648,7 +648,7 @@ void ConfigWindow::initDelmiaSlot()
 }
 
 // 初始化色彩模式
-void ConfigWindow::initThemeSwitch() {
+void MainWindow1::initThemeSwitch() {
     // 连接信号槽（ComboBox 选项已在 UI 中设置）
     connect(ui->ColorCombox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this](int index) {
@@ -677,7 +677,7 @@ void ConfigWindow::initThemeSwitch() {
 }
 
 // 实时更新信息
-void ConfigWindow::update()
+void MainWindow1::update()
 {
     // static int lastIs3D = -1;
     // int currentIs3D = adsClient.getIntVal(0);
@@ -768,7 +768,7 @@ void ConfigWindow::update()
 }
 
 // 保存系统参数
-void ConfigWindow::saveParameters()
+void MainWindow1::saveParameters()
 {
     // 在这里设置
     QCoreApplication::setOrganizationName("MyCompany");
@@ -806,7 +806,7 @@ void ConfigWindow::saveParameters()
 }
 
 // 加载系统参数
-void ConfigWindow::loadParameters()
+void MainWindow1::loadParameters()
 {
     // 在这里设置
     QCoreApplication::setOrganizationName("MyCompany");
@@ -847,7 +847,7 @@ void ConfigWindow::loadParameters()
 }
 
 // 保存点位参数
-void ConfigWindow::savePoseData(bool showPopup)
+void MainWindow1::savePoseData(bool showPopup)
 {
     struct DataGroup {
         double X, Y;
@@ -990,7 +990,7 @@ void ConfigWindow::savePoseData(bool showPopup)
 }
 
 // 加载点位参数
-void ConfigWindow::loadPoseData()
+void MainWindow1::loadPoseData()
 {
     // 获取今天的文件路径
     QString currentDate = QDateTime::currentDateTime().toString("yyyy-MM-dd");
@@ -1085,7 +1085,7 @@ void ConfigWindow::loadPoseData()
 }
 
 // // 加载点位参数
-// void ConfigWindow::loadPoseData()
+// void MainWindow1::loadPoseData()
 // {
 //     // 获取今天和昨天的文件路径
 //     QString currentDate = QDateTime::currentDateTime().toString("yyyy-MM-dd");
@@ -1173,7 +1173,7 @@ void ConfigWindow::loadPoseData()
 // }
 
 // 应用深色主题
-void ConfigWindow::applyDarkTheme()
+void MainWindow1::applyDarkTheme()
 {
     qApp->setStyle(QStyleFactory::create("Fusion"));
 
@@ -1227,7 +1227,7 @@ void ConfigWindow::applyDarkTheme()
 }
 
 // 应用浅色主题
-void ConfigWindow::applyLightTheme()
+void MainWindow1::applyLightTheme()
 {
     qApp->setStyle(QStyleFactory::create("Fusion"));
 
@@ -1281,7 +1281,7 @@ void ConfigWindow::applyLightTheme()
 }
 
 // 状态指示灯
-void ConfigWindow::setupIndicatorFromCheckBox(QCheckBox *checkBox, const QColor &onColor)
+void MainWindow1::setupIndicatorFromCheckBox(QCheckBox *checkBox, const QColor &onColor)
 {
     if (!checkBox) return;
 
@@ -1345,7 +1345,7 @@ void ConfigWindow::setupIndicatorFromCheckBox(QCheckBox *checkBox, const QColor 
 }
 
 // 删除当前行
-void ConfigWindow::onDeleteRow()
+void MainWindow1::onDeleteRow()
 {
     QPushButton *button = qobject_cast<QPushButton *>(sender());
     if (!button)
@@ -1366,7 +1366,7 @@ void ConfigWindow::onDeleteRow()
 }
 
 // 单元格响应
-void ConfigWindow::onCellChanged(int row, int column)
+void MainWindow1::onCellChanged(int row, int column)
 {
     if (row < 0 || row >= static_cast<int>(m_tcgPoints.size()))
         return;
@@ -1394,7 +1394,7 @@ void ConfigWindow::onCellChanged(int row, int column)
 }
 
 // 刷新标签页
-void ConfigWindow::refreshTabwidget()
+void MainWindow1::refreshTabwidget()
 {
     int beamIndex = m_currentBeam - 1;
 
@@ -1429,7 +1429,7 @@ void ConfigWindow::refreshTabwidget()
         deleteButton = new QPushButton(tr("删除"));
         deleteButton->setProperty("row", i);
         deleteButton->setStyleSheet("font:14pt;");
-        connect(deleteButton, &QPushButton::clicked, this, &ConfigWindow::onDeleteRow);
+        connect(deleteButton, &QPushButton::clicked, this, &MainWindow1::onDeleteRow);
         ui->tableWidget->setCellWidget(i, 4, deleteButton);
     }
     ui->tableWidget->blockSignals(false);
@@ -1437,7 +1437,7 @@ void ConfigWindow::refreshTabwidget()
 }
 
 // 查找可用索引
-int ConfigWindow::findNextAvailableIndex(const std::vector<int> &numbers)
+int MainWindow1::findNextAvailableIndex(const std::vector<int> &numbers)
 {
     for (int nextIndex = 1;; ++nextIndex) {
         if (std::find(numbers.begin(), numbers.end(), nextIndex) == numbers.end())
@@ -1447,7 +1447,7 @@ int ConfigWindow::findNextAvailableIndex(const std::vector<int> &numbers)
 }
 
 // 加载TCG点
-void ConfigWindow::loadTcgPoints()
+void MainWindow1::loadTcgPoints()
 {
     m_tcgPoints.clear();
     int beamCount = qMax(1, config.getBeamCounts());
@@ -1466,7 +1466,7 @@ void ConfigWindow::loadTcgPoints()
 }
 
 // 记录位姿点
-void ConfigWindow::recordPosePoint(int pointIndex)
+void MainWindow1::recordPosePoint(int pointIndex)
 {
     // X Y 输入框映射
     QStringList xyFields = {
@@ -1543,7 +1543,7 @@ void ConfigWindow::recordPosePoint(int pointIndex)
 }
 
 // 刷新工作组
-void ConfigWindow::refreshgroup()
+void MainWindow1::refreshgroup()
 {
     ui->group_comboBox->blockSignals(true);
     ui->group_comboBox->clear();
@@ -1560,7 +1560,7 @@ void ConfigWindow::refreshgroup()
 }
 
 // 新建文件
-void ConfigWindow::on_pushButton_43_clicked()
+void MainWindow1::on_pushButton_43_clicked()
 {
     // 创建自定义对话框
     QDialog dialog(this);
@@ -1817,7 +1817,7 @@ void ConfigWindow::on_pushButton_43_clicked()
 }
 
 // 递归复制目录
-bool ConfigWindow::copyDirectory(const QString &srcPath, const QString &dstPath)
+bool MainWindow1::copyDirectory(const QString &srcPath, const QString &dstPath)
 {
     QDir sourceDir(srcPath);
     if (!sourceDir.exists()) {
@@ -1862,7 +1862,7 @@ bool ConfigWindow::copyDirectory(const QString &srcPath, const QString &dstPath)
 }
 
 // 计算并更新 ZB Part 中的四个点
-bool ConfigWindow::calculateAndUpdateZBFourPoints(const QString &projectName)
+bool MainWindow1::calculateAndUpdateZBFourPoints(const QString &projectName)
 {
     // 龙门四组X、Y
     QStringList gantryFields = {
@@ -1928,17 +1928,17 @@ bool ConfigWindow::calculateAndUpdateZBFourPoints(const QString &projectName)
     return true;
 }
 
-void ConfigWindow::init3DCheckerSlot()
+void MainWindow1::init3DCheckerSlot()
 {
-    connect(this, &ConfigWindow::requestStartDrawing,
-            this, &ConfigWindow::onRequestStartDrawing,
+    connect(this, &MainWindow1::requestStartDrawing,
+            this, &MainWindow1::onRequestStartDrawing,
             Qt::QueuedConnection);
-    connect(this, &ConfigWindow::requestStopDrawing,
-            this, &ConfigWindow::onRequestStopDrawing,
+    connect(this, &MainWindow1::requestStopDrawing,
+            this, &MainWindow1::onRequestStopDrawing,
             Qt::QueuedConnection);
 }
 
-void ConfigWindow::start3DChecker()
+void MainWindow1::start3DChecker()
 {
     m_isRunning = true;
     m_3dThread = new QThread(this);
@@ -1970,7 +1970,7 @@ void ConfigWindow::start3DChecker()
     m_3dThread->start();
 }
 
-void ConfigWindow::startCsvWriter()
+void MainWindow1::startCsvWriter()
 {
     qDebug() << "[CSV] startCsvWriter 进入";
     m_csvThread = new QThread(this);
@@ -1995,7 +1995,7 @@ void ConfigWindow::startCsvWriter()
     qDebug() << "[CSV] CSV 线程已启动";
 }
 
-void ConfigWindow::onRequestStartDrawing()
+void MainWindow1::onRequestStartDrawing()
 {
     qDebug() << "[3DChecker] onRequestStartDrawing 进入:"
              << " scan_continue_flag=" << scan_continue_flag
@@ -2015,10 +2015,10 @@ void ConfigWindow::onRequestStartDrawing()
     // 机器人开始扫板信号已到达：触发 3DScan 开始绘制
     if (m_scanStartPending) {
         m_scanStartPending = false;
-        if (MainWindow5::s_instance) {
-            MainWindow7 *mw7 = MainWindow5::s_instance->getMainWindow7();
-            if (mw7)
-                mw7->startDrawing();
+        if (MainWindow2::s_instance) {
+            MainWindow3 *mw3 = MainWindow2::s_instance->getMainWindow3();
+            if (mw3)
+                mw3->startDrawing();
         }
         qDebug() << "[3DChecker] startDrawing 调用完成";
     }
@@ -2034,7 +2034,7 @@ void ConfigWindow::onRequestStartDrawing()
              << " amp[0]=" << amp[0] << " si=" << si;
 }
 
-void ConfigWindow::onRequestStopDrawing()
+void MainWindow1::onRequestStopDrawing()
 {
     // 仅在扫描进行中响应停止信号，避免启动阶段 var0 跳变提前发送停止命令
     if (scan_continue_flag) {
@@ -2052,12 +2052,12 @@ void ConfigWindow::onRequestStopDrawing()
     m_start = false;
 
     // 扫描结束
-    ConfigWindow::on_pushButton_20_clicked();
+    MainWindow1::on_pushButton_20_clicked();
 
     qDebug() << "[3DChecker] 停止绘制: robot_ipoc=" << robot_ipoc;
 }
 
-void ConfigWindow::openCsvFile()
+void MainWindow1::openCsvFile()
 {
     if (m_isCsvOpen) return;
 
@@ -2085,7 +2085,7 @@ void ConfigWindow::openCsvFile()
     qDebug() << "[CSV] openCsvFile 结束";
 }
 
-void ConfigWindow::writeCsvHeader()
+void MainWindow1::writeCsvHeader()
 {
     m_csvStream << "X,Y,Z,A,B,C,SI,";
 
@@ -2098,7 +2098,7 @@ void ConfigWindow::writeCsvHeader()
     m_csvStream << "\n";
 }
 
-// void ConfigWindow::writeCsvData()
+// void MainWindow1::writeCsvData()
 // {
 //     QMutexLocker locker(&m_csvMutex);
 
@@ -2131,7 +2131,7 @@ void ConfigWindow::writeCsvHeader()
 //     lastIpoc = currentIpoc;
 // }
 
-void ConfigWindow::writeCsvData()
+void MainWindow1::writeCsvData()
 {
     QMutexLocker locker(&m_csvMutex);
 
@@ -2164,7 +2164,7 @@ void ConfigWindow::writeCsvData()
     // longmen[0] = adsClient.getFloatVal(0x67D18);
     // longmen[1] = adsClient.getFloatVal(0x67D98);
 
-    // mainWindow7->Drawing(pose, amp, tof, si, beam, longmen);
+    // mainWindow3->Drawing(pose, amp, tof, si, beam, longmen);
 
 
     static int frameCount = 0;
@@ -2237,7 +2237,7 @@ void ConfigWindow::writeCsvData()
     }
 }
 
-// void ConfigWindow::writeCsvData()
+// void MainWindow1::writeCsvData()
 // {
 //     QMutexLocker locker(&m_csvMutex);
 
@@ -2290,7 +2290,7 @@ void ConfigWindow::writeCsvData()
 //     }
 // }
 
-void ConfigWindow::closeCsvFile()
+void MainWindow1::closeCsvFile()
 {
     if (!m_isCsvOpen) return;
 
@@ -2302,7 +2302,7 @@ void ConfigWindow::closeCsvFile()
 }
 
 // 打开文件
-void ConfigWindow::on_pushButton_clicked()
+void MainWindow1::on_pushButton_clicked()
 {
     // 先获取文件路径（主线程，因为需要文件对话框）
     QSettings settings("HeWenTech", "CATIAAutomationTool");
@@ -2327,20 +2327,20 @@ void ConfigWindow::on_pushButton_clicked()
 }
 
 // 保存文件
-void ConfigWindow::on_pushButton_3_clicked()
+void MainWindow1::on_pushButton_3_clicked()
 {
 
     QMetaObject::invokeMethod(m_worker, "doSaveCurrentFile", Qt::QueuedConnection);
 }
 
 // 退出仿真
-void ConfigWindow::on_pushButton_8_clicked()
+void MainWindow1::on_pushButton_8_clicked()
 {
     QMetaObject::invokeMethod(m_worker, "doExitSimulation", Qt::QueuedConnection);
 }
 
 // 切换窗口
-void ConfigWindow::on_pushButton_4_clicked()
+void MainWindow1::on_pushButton_4_clicked()
 {
     // 创建一个静态指针来保存当前的对话框和列表控件
     static QPointer<QDialog> currentDialog = nullptr;
@@ -2446,7 +2446,7 @@ void ConfigWindow::on_pushButton_4_clicked()
 }
 
 // 提取创建对话框的函数
-void ConfigWindow::createSwitchWindowDialog(const QList<QStringList> &docInfoList,
+void MainWindow1::createSwitchWindowDialog(const QList<QStringList> &docInfoList,
                                           QPointer<QDialog> &dialog,
                                           QPointer<QListWidget> &listWidget)
 {
@@ -2724,13 +2724,13 @@ void ConfigWindow::createSwitchWindowDialog(const QList<QStringList> &docInfoLis
 }
 
 // 关闭文件
-void ConfigWindow::on_pushButton_44_clicked()
+void MainWindow1::on_pushButton_44_clicked()
 {
     QMetaObject::invokeMethod(m_worker, "doCloseCurrentFile", Qt::QueuedConnection);
 }
 
 // 选择横向界限
-void ConfigWindow::on_pushButton_2_clicked()
+void MainWindow1::on_pushButton_2_clicked()
 {
     if (ui->lineEdit_2->text().contains(".CATPart", Qt::CaseInsensitive))
     {
@@ -2745,7 +2745,7 @@ void ConfigWindow::on_pushButton_2_clicked()
 }
 
 // 选择纵向界限
-void ConfigWindow::on_pushButton_5_clicked()
+void MainWindow1::on_pushButton_5_clicked()
 {
     if (ui->lineEdit_2->text().contains(".CATPart", Qt::CaseInsensitive))
     {
@@ -2760,7 +2760,7 @@ void ConfigWindow::on_pushButton_5_clicked()
 }
 
 // 分区扫描
-void ConfigWindow::on_pushButton_40_clicked()
+void MainWindow1::on_pushButton_40_clicked()
 {
     if (ui->lineEdit_2->text().contains(".CATPart", Qt::CaseInsensitive))
     {
@@ -2775,7 +2775,7 @@ void ConfigWindow::on_pushButton_40_clicked()
 }
 
 // 创建分区
-void ConfigWindow::on_pushButton_6_clicked()
+void MainWindow1::on_pushButton_6_clicked()
 {
     if (ui->lineEdit_2->text().contains(".CATPart", Qt::CaseInsensitive))
     {
@@ -2790,7 +2790,7 @@ void ConfigWindow::on_pushButton_6_clicked()
 }
 
 // 选择闭合边界
-void ConfigWindow::on_pushButton_10_clicked()
+void MainWindow1::on_pushButton_10_clicked()
 {
     if (ui->lineEdit_2->text().contains(".CATPart", Qt::CaseInsensitive))
     {
@@ -2805,7 +2805,7 @@ void ConfigWindow::on_pushButton_10_clicked()
 }
 
 // 选择起始路径
-void ConfigWindow::on_pushButton_11_clicked()
+void MainWindow1::on_pushButton_11_clicked()
 {
     if (ui->lineEdit_2->text().contains(".CATPart", Qt::CaseInsensitive))
     {
@@ -2820,7 +2820,7 @@ void ConfigWindow::on_pushButton_11_clicked()
 }
 
 // 路径规划
-void ConfigWindow::on_pushButton_46_clicked()
+void MainWindow1::on_pushButton_46_clicked()
 {
     if (ui->lineEdit_2->text().contains(".CATPart", Qt::CaseInsensitive))
     {
@@ -2835,7 +2835,7 @@ void ConfigWindow::on_pushButton_46_clicked()
 }
 
 // 创建路径
-void ConfigWindow::on_pushButton_12_clicked()
+void MainWindow1::on_pushButton_12_clicked()
 {
     if (ui->lineEdit_2->text().contains(".CATPart", Qt::CaseInsensitive))
     {
@@ -2850,7 +2850,7 @@ void ConfigWindow::on_pushButton_12_clicked()
 }
 
 // 标定点位
-void ConfigWindow::on_pushButton_17_clicked()
+void MainWindow1::on_pushButton_17_clicked()
 {
     QMetaObject::invokeMethod(m_worker, "doGetActiveDocumentName", Qt::QueuedConnection);
 
@@ -2877,15 +2877,15 @@ void ConfigWindow::on_pushButton_17_clicked()
 }
 
 // 扫描开始
-void ConfigWindow::on_pushButton_9_clicked()
+void MainWindow1::on_pushButton_9_clicked()
 {
-    ConfigWindow::on_pushButton_9();
+    MainWindow1::on_pushButton_9();
 }
 
 // 扫描开始（外部调用）
-void ConfigWindow::on_pushButton_9()
+void MainWindow1::on_pushButton_9()
 {
-    ConfigWindow::on_pushButton_28_clicked(); // 龙门电机失能
+    MainWindow1::on_pushButton_28_clicked(); // 龙门电机失能
 
     adsClient.setIntVal(0x5EB08, ui->comboBox_2->currentIndex()+1);
 
@@ -2904,23 +2904,23 @@ void ConfigWindow::on_pushButton_9()
 }
 
 // 扫描暂停
-void ConfigWindow::on_pushButton_19_clicked()
+void MainWindow1::on_pushButton_19_clicked()
 {
-    ConfigWindow::on_pushButton_19();
+    MainWindow1::on_pushButton_19();
 }
 
 // 扫描暂停（外部调用）
-void ConfigWindow::on_pushButton_19()
+void MainWindow1::on_pushButton_19()
 {
     scan_continue_flag = true;
     adsClient.setIntVal(0x5E256, 8);
     m_scanStartPending = false;
 
     // 链接 3DScan：停止绘制（暂停，可继续）
-    if (MainWindow5::s_instance) {
-        MainWindow7 *mw7 = MainWindow5::s_instance->getMainWindow7();
-        if (mw7)
-            mw7->pauseDrawing();
+    if (MainWindow2::s_instance) {
+        MainWindow3 *mw3 = MainWindow2::s_instance->getMainWindow3();
+        if (mw3)
+            mw3->pauseDrawing();
     }
     // 调试：打印扫描暂停写入/读回的 PLC 值
     qDebug() << "[ScanCtrl] 扫描暂停: 0x5E256=" << adsClient.getIntVal(0x5E256)
@@ -2928,9 +2928,9 @@ void ConfigWindow::on_pushButton_19()
 }
 
 // 扫描结束
-void ConfigWindow::on_pushButton_20_clicked()
+void MainWindow1::on_pushButton_20_clicked()
 {
-    ConfigWindow::on_pushButton_20();
+    MainWindow1::on_pushButton_20();
 
     m_libKuka3D = Kuka3D::LibKuka3D::getInstance();
 
@@ -2941,7 +2941,7 @@ void ConfigWindow::on_pushButton_20_clicked()
 }
 
 // 扫描结束（外部调用）
-void ConfigWindow::on_pushButton_20()
+void MainWindow1::on_pushButton_20()
 {
     scan_continue_flag = true;
     adsClient.setIntVal(0x5E256, 8);
@@ -2949,10 +2949,10 @@ void ConfigWindow::on_pushButton_20()
     m_scanStartPending = false;
 
     // 链接 3DScan：结束绘制
-    if (MainWindow5::s_instance) {
-        MainWindow7 *mw7 = MainWindow5::s_instance->getMainWindow7();
-        if (mw7)
-            mw7->finishDrawing();
+    if (MainWindow2::s_instance) {
+        MainWindow3 *mw3 = MainWindow2::s_instance->getMainWindow3();
+        if (mw3)
+            mw3->finishDrawing();
     }
     // 调试：打印扫描结束写入/读回的 PLC 值
     qDebug() << "[ScanCtrl] 扫描结束: 0x5E256=" << adsClient.getIntVal(0x5E256)
@@ -2969,7 +2969,7 @@ void ConfigWindow::on_pushButton_20()
 }
 
 // 龙门开始
-void ConfigWindow::on_pushButton_18_clicked()
+void MainWindow1::on_pushButton_18_clicked()
 {
     if (ui->comboBox->currentText() == "绝对")
     {
@@ -3022,14 +3022,14 @@ void ConfigWindow::on_pushButton_18_clicked()
 }
 
 // 龙门暂停
-void ConfigWindow::on_pushButton_21_clicked()
+void MainWindow1::on_pushButton_21_clicked()
 {
     adsClient.setIntVal(0x5EBDF, 1); // 给 x 轴电机上复位 MotorControlVary[0].bStop_do
     adsClient.setIntVal(0x5EC2F, 1); // 给 Y 轴电机上复位 MotorControlVary[2].bStop_do
 }
 
 // 龙门回零
-void ConfigWindow::on_pushButton_22_clicked()
+void MainWindow1::on_pushButton_22_clicked()
 {
     // 弹窗提示
     QMessageBox::StandardButton reply;
@@ -3054,7 +3054,7 @@ void ConfigWindow::on_pushButton_22_clicked()
 }
 
 // 电机使能
-void ConfigWindow::on_pushButton_27_clicked()
+void MainWindow1::on_pushButton_27_clicked()
 {
     if(scan_continue_flag && !ui->label_12->text().toInt())
     {
@@ -3064,7 +3064,7 @@ void ConfigWindow::on_pushButton_27_clicked()
 }
 
 // 电机失能
-void ConfigWindow::on_pushButton_28_clicked()
+void MainWindow1::on_pushButton_28_clicked()
 {
     // adsClient.setIntVal(0x5EB0B, 1);
 
@@ -3078,7 +3078,7 @@ void ConfigWindow::on_pushButton_28_clicked()
 }
 
 // X++按下
-void ConfigWindow::on_pushButton_23_pressed()
+void MainWindow1::on_pushButton_23_pressed()
 {
     adsClient.setFloatVal(0x5EBE4, ui->doubleSpinBox_2->text().toFloat()); // 设置 x 轴的点动速度 MotorControlVary[0].JogVelocity
 
@@ -3086,7 +3086,7 @@ void ConfigWindow::on_pushButton_23_pressed()
 }
 
 // X++松开
-void ConfigWindow::on_pushButton_23_released()
+void MainWindow1::on_pushButton_23_released()
 {
     adsClient.setFloatVal(0x5EBE4, 0); // 设置 x 轴的点动速度 MotorControlVary[0].JogVelocity
 
@@ -3094,7 +3094,7 @@ void ConfigWindow::on_pushButton_23_released()
 }
 
 // X--按下
-void ConfigWindow::on_pushButton_24_pressed()
+void MainWindow1::on_pushButton_24_pressed()
 {
     adsClient.setFloatVal(0x5EBE4, ui->doubleSpinBox_2->text().toFloat()); // 设置 x 轴的点动速度 MotorControlVary[0].JogVelocity
 
@@ -3102,7 +3102,7 @@ void ConfigWindow::on_pushButton_24_pressed()
 }
 
 // X--松开
-void ConfigWindow::on_pushButton_24_released()
+void MainWindow1::on_pushButton_24_released()
 {
     adsClient.setFloatVal(0x5EBE4, 0); // 设置 x 轴的点动速度 MotorControlVary[0].JogVelocity
 
@@ -3110,7 +3110,7 @@ void ConfigWindow::on_pushButton_24_released()
 }
 
 // Y++按下
-void ConfigWindow::on_pushButton_25_pressed()
+void MainWindow1::on_pushButton_25_pressed()
 {
     adsClient.setFloatVal(0x5EC34, ui->doubleSpinBox->text().toFloat()); // 设置 Y 轴的点动速度 MotorControlVary[2].JogVelocity
 
@@ -3118,7 +3118,7 @@ void ConfigWindow::on_pushButton_25_pressed()
 }
 
 // Y++松开
-void ConfigWindow::on_pushButton_25_released()
+void MainWindow1::on_pushButton_25_released()
 {
     adsClient.setFloatVal(0x5EC34, 0); // 设置 Y 轴的点动速度 MotorControlVary[2].JogVelocity
 
@@ -3126,7 +3126,7 @@ void ConfigWindow::on_pushButton_25_released()
 }
 
 // Y--按下
-void ConfigWindow::on_pushButton_26_pressed()
+void MainWindow1::on_pushButton_26_pressed()
 {
     adsClient.setFloatVal(0x5EC34, ui->doubleSpinBox->text().toFloat()); // 设置 Y 轴的点动速度 MotorControlVary[2].JogVelocity
 
@@ -3134,7 +3134,7 @@ void ConfigWindow::on_pushButton_26_pressed()
 }
 
 // Y--松开
-void ConfigWindow::on_pushButton_26_released()
+void MainWindow1::on_pushButton_26_released()
 {
     adsClient.setFloatVal(0x5EC34, 0); // 设置 Y 轴的点动速度 MotorControlVary[2].JogVelocity
 
@@ -3142,37 +3142,37 @@ void ConfigWindow::on_pushButton_26_released()
 }
 
 // 位姿点一
-void ConfigWindow::on_pushButton_13_clicked()
+void MainWindow1::on_pushButton_13_clicked()
 {
     recordPosePoint(1);
 }
 
 // 位姿点二
-void ConfigWindow::on_pushButton_14_clicked()
+void MainWindow1::on_pushButton_14_clicked()
 {
     recordPosePoint(2);
 }
 
 // 位姿点三
-void ConfigWindow::on_pushButton_15_clicked()
+void MainWindow1::on_pushButton_15_clicked()
 {
     recordPosePoint(3);
 }
 
 // 位姿点四
-void ConfigWindow::on_pushButton_16_clicked()
+void MainWindow1::on_pushButton_16_clicked()
 {
     recordPosePoint(4);
 }
 
 // 保存点位
-void ConfigWindow::on_pushButton_32_clicked()
+void MainWindow1::on_pushButton_32_clicked()
 {
     savePoseData(true);
 }
 
 // 清空点位
-void ConfigWindow::on_pushButton_35_clicked()
+void MainWindow1::on_pushButton_35_clicked()
 {
     // qDebug() << "用户点击清空点位";
 
@@ -3211,7 +3211,7 @@ void ConfigWindow::on_pushButton_35_clicked()
 
 
 // 加载点位
-void ConfigWindow::on_pushButton_37_clicked()
+void MainWindow1::on_pushButton_37_clicked()
 {
     QString currentFilePath;  // 保存当前选择的文件路径
 
@@ -3497,7 +3497,7 @@ void ConfigWindow::on_pushButton_37_clicked()
 
 
 // // 加载点位
-// void ConfigWindow::on_pushButton_37_clicked()
+// void MainWindow1::on_pushButton_37_clicked()
 // {
 //     QString currentFilePath;  // 保存当前选择的文件路径
 
@@ -3718,7 +3718,7 @@ void ConfigWindow::on_pushButton_37_clicked()
 // }
 
 // 打开日志
-void ConfigWindow::on_pushButton_41_clicked()
+void MainWindow1::on_pushButton_41_clicked()
 {
     if (!QFile::exists(logPath)) {
         QMessageBox::warning(this, "日志不存在", "未找到系统日志文件！");
@@ -3729,19 +3729,19 @@ void ConfigWindow::on_pushButton_41_clicked()
 }
 
 // 打开仿真（快捷指令）
-void ConfigWindow::on_pushButton_29_clicked()
+void MainWindow1::on_pushButton_29_clicked()
 {
     QMetaObject::invokeMethod(m_worker, "doOpenSimulation", Qt::QueuedConnection);
 }
 
 // 关闭仿真（快捷指令）
-void ConfigWindow::on_pushButton_30_clicked()
+void MainWindow1::on_pushButton_30_clicked()
 {
     QMetaObject::invokeMethod(m_worker, "doCloseSimulation", Qt::QueuedConnection);
 }
 
 // 后置处理（快捷指令）
-void ConfigWindow::on_pushButton_31_clicked()
+void MainWindow1::on_pushButton_31_clicked()
 {
     QSettings settings("YourCompany", "YourApp");
 
@@ -3897,7 +3897,7 @@ void ConfigWindow::on_pushButton_31_clicked()
 }
 
 // // 后置处理（快捷指令）
-// void ConfigWindow::on_pushButton_31_clicked()
+// void MainWindow1::on_pushButton_31_clicked()
 // {
 //     QStringList inputFiles = QFileDialog::getOpenFileNames(this, "选择 .dat 和 .src 文件", "", "DAT/SRC文件 (*.dat *.src)");
 //     if (inputFiles.isEmpty()) return;
@@ -4049,7 +4049,7 @@ void ConfigWindow::on_pushButton_31_clicked()
 // }
 
 // 退出系统（快捷指令）
-void ConfigWindow::on_pushButton_34_clicked()
+void MainWindow1::on_pushButton_34_clicked()
 {
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(this, "确认退出", "确定要退出吗？",
@@ -4060,7 +4060,7 @@ void ConfigWindow::on_pushButton_34_clicked()
 }
 
 // 采集帧率
-void ConfigWindow::on_PRFSpinBox_valueChanged(double prf)
+void MainWindow1::on_PRFSpinBox_valueChanged(double prf)
 {
     if (!isBlockSignal[ui->PRFSpinBox]) {
         config.setFrameRate(static_cast<int32_t>(prf));
@@ -4068,7 +4068,7 @@ void ConfigWindow::on_PRFSpinBox_valueChanged(double prf)
 }
 
 // 最大幅值
-void ConfigWindow::on_MamplitudeBox_currentIndexChanged(int index)
+void MainWindow1::on_MamplitudeBox_currentIndexChanged(int index)
 {
     config.setMaxAmplitude(indexToAmplitude[ui->MamplitudeBox->currentIndex()]);
     emit App::getInstance()->signal_GateView_Refresh();
@@ -4076,7 +4076,7 @@ void ConfigWindow::on_MamplitudeBox_currentIndexChanged(int index)
 }
 
 // 增益
-void ConfigWindow::on_GainSpinBox_valueChanged(double gain)
+void MainWindow1::on_GainSpinBox_valueChanged(double gain)
 {
     if (!isBlockSignal[ui->GainSpinBox]) {
         config.setGain(gain);
@@ -4084,7 +4084,7 @@ void ConfigWindow::on_GainSpinBox_valueChanged(double gain)
 }
 
 // 范围起点
-void ConfigWindow::on_RangstartSpinBox_valueChanged(double start)
+void MainWindow1::on_RangstartSpinBox_valueChanged(double start)
 {
     if (!isBlockSignal[ui->RangstartSpinBox]) {
         config.setRangeStart(start);
@@ -4094,7 +4094,7 @@ void ConfigWindow::on_RangstartSpinBox_valueChanged(double start)
 }
 
 // 范围终点
-void ConfigWindow::on_RangendSpinBox_valueChanged(double end)
+void MainWindow1::on_RangendSpinBox_valueChanged(double end)
 {
     if (!isBlockSignal[ui->RangendSpinBox]) {
         config.setRangeEnd(end);
@@ -4104,7 +4104,7 @@ void ConfigWindow::on_RangendSpinBox_valueChanged(double end)
 }
 
 // 低通滤波器
-void ConfigWindow::on_FilterLowBox_currentIndexChanged(int index)
+void MainWindow1::on_FilterLowBox_currentIndexChanged(int index)
 {
     if (index == 0) {
         config.setFilterHigh(-1);
@@ -4113,7 +4113,7 @@ void ConfigWindow::on_FilterLowBox_currentIndexChanged(int index)
 }
 
 // 高通滤波器
-void ConfigWindow::on_FilterHighBox_currentIndexChanged(int index)
+void MainWindow1::on_FilterHighBox_currentIndexChanged(int index)
 {
     if (index == 0) {
         config.setFilterHigh(-1);
@@ -4122,7 +4122,7 @@ void ConfigWindow::on_FilterHighBox_currentIndexChanged(int index)
 }
 
 // 图像滤波
-void ConfigWindow::on_vedioFilterBox_currentIndexChanged(int index)
+void MainWindow1::on_vedioFilterBox_currentIndexChanged(int index)
 {
     if (index >= 0 && index < videoFilterCount) {
         config.setVideoFilterMHz(indexToVideoFilter[index]);
@@ -4131,7 +4131,7 @@ void ConfigWindow::on_vedioFilterBox_currentIndexChanged(int index)
 }
 
 // 检波模式
-void ConfigWindow::on_RectifierBox_currentIndexChanged(int index)
+void MainWindow1::on_RectifierBox_currentIndexChanged(int index)
 {
     config.setRectifierMode(static_cast<RectifierType>(index));
     emit App::getInstance()->signal_RectifierChanged();
@@ -4140,7 +4140,7 @@ void ConfigWindow::on_RectifierBox_currentIndexChanged(int index)
 }
 
 // 闸门使能关闭
-void ConfigWindow::on_Btn_right_clicked()
+void MainWindow1::on_Btn_right_clicked()
 {
     if (currentGate == GATE::GATE_I) {
         config.setGateIEnable(false);
@@ -4178,7 +4178,7 @@ void ConfigWindow::on_Btn_right_clicked()
 }
 
 // 闸门使能开启
-void ConfigWindow::on_Btn_left_clicked()
+void MainWindow1::on_Btn_left_clicked()
 {
     if (currentGate == GATE::GATE_I) {
         config.setGateIEnable(true);
@@ -4193,7 +4193,7 @@ void ConfigWindow::on_Btn_left_clicked()
 }
 
 // 闸门测量方法
-void ConfigWindow::on_MeasureBox_currentIndexChanged(int index)
+void MainWindow1::on_MeasureBox_currentIndexChanged(int index)
 {
     if (currentGate == GATE::GATE_I) {
         config.setGateIMeasureType(static_cast<measureType>(index));
@@ -4207,7 +4207,7 @@ void ConfigWindow::on_MeasureBox_currentIndexChanged(int index)
 }
 
 // 闸门开始
-void ConfigWindow::on_StartSpinBox_valueChanged(double start)
+void MainWindow1::on_StartSpinBox_valueChanged(double start)
 {
     if (!isBlockSignal[ui->StartSpinBox]) {
         if (currentGate == GATE::GATE_I) {
@@ -4232,7 +4232,7 @@ void ConfigWindow::on_StartSpinBox_valueChanged(double start)
 }
 
 // 闸门宽度
-void ConfigWindow::on_WidthSpinBox_valueChanged(double width)
+void MainWindow1::on_WidthSpinBox_valueChanged(double width)
 {
     if (!isBlockSignal[ui->WidthSpinBox]) {
         if (currentGate == GATE::GATE_I) {
@@ -4249,7 +4249,7 @@ void ConfigWindow::on_WidthSpinBox_valueChanged(double width)
 }
 
 // 闸门阈值
-void ConfigWindow::on_ThresholdSpinBox_valueChanged(double threshold)
+void MainWindow1::on_ThresholdSpinBox_valueChanged(double threshold)
 {
     if (!isBlockSignal[ui->ThresholdSpinBox]) {
         auto value = threshold;
@@ -4285,7 +4285,7 @@ void ConfigWindow::on_ThresholdSpinBox_valueChanged(double threshold)
 }
 
 // 激发电压
-void ConfigWindow::on_PaVoltageSpinBox_valueChanged(double PaVoltage)
+void MainWindow1::on_PaVoltageSpinBox_valueChanged(double PaVoltage)
 {
     if (!isBlockSignal[ui->PaVoltageSpinBox]) {
         config.setPaVoltage(static_cast<int32_t>(PaVoltage));
@@ -4293,7 +4293,7 @@ void ConfigWindow::on_PaVoltageSpinBox_valueChanged(double PaVoltage)
 }
 
 // 中心频率
-void ConfigWindow::on_ProbeFrequencySpinBox_valueChanged(double ProbeFrequency)
+void MainWindow1::on_ProbeFrequencySpinBox_valueChanged(double ProbeFrequency)
 {
     if (!isBlockSignal[ui->ProbeFrequencySpinBox]) {
         config.setProbeFrequency(ProbeFrequency);
@@ -4301,7 +4301,7 @@ void ConfigWindow::on_ProbeFrequencySpinBox_valueChanged(double ProbeFrequency)
 }
 
 // 脉冲宽度
-void ConfigWindow::on_PwidthSpinBox_valueChanged(double PulseWidth)
+void MainWindow1::on_PwidthSpinBox_valueChanged(double PulseWidth)
 {
     if (!isBlockSignal[ui->PwidthSpinBox]) {
         config.setPulseWidth(static_cast<int32_t>(PulseWidth));
@@ -4309,7 +4309,7 @@ void ConfigWindow::on_PwidthSpinBox_valueChanged(double PulseWidth)
 }
 
 // 同步模式
-void ConfigWindow::on_SyncBox_currentIndexChanged(int index)
+void MainWindow1::on_SyncBox_currentIndexChanged(int index)
 {
     if (currentGate == GATE::GATE_I) {
     } else if (currentGate == GATE::GATE_A) {
@@ -4422,7 +4422,7 @@ void ConfigWindow::on_SyncBox_currentIndexChanged(int index)
 }
 
 // 同步采集
-void ConfigWindow::on_SynAcqisitBox_currentIndexChanged(int index)
+void MainWindow1::on_SynAcqisitBox_currentIndexChanged(int index)
 {
     if (currentGate == GATE::GATE_I) {
         if (index) { // 开启同步采集
@@ -4436,7 +4436,7 @@ void ConfigWindow::on_SynAcqisitBox_currentIndexChanged(int index)
 }
 
 // TCG使能
-void ConfigWindow::on_TCG_ON_Btn_clicked()
+void MainWindow1::on_TCG_ON_Btn_clicked()
 {
     if (tcg_enable) {
         tcg_enable = false;
@@ -4452,7 +4452,7 @@ void ConfigWindow::on_TCG_ON_Btn_clicked()
 }
 
 // 新增点
-void ConfigWindow::on_Add_point_Btn_clicked()
+void MainWindow1::on_Add_point_Btn_clicked()
 {
     int beamIndex = m_currentBeam - 1;
 
@@ -4471,7 +4471,7 @@ void ConfigWindow::on_Add_point_Btn_clicked()
 }
 
 // 当前工作组
-void ConfigWindow::on_group_comboBox_currentIndexChanged(int index)
+void MainWindow1::on_group_comboBox_currentIndexChanged(int index)
 {
     if (index < 0) return;
     QString itemData = ui->group_comboBox->itemText(index);
@@ -4483,7 +4483,7 @@ void ConfigWindow::on_group_comboBox_currentIndexChanged(int index)
 }
 
 // 添加工作组
-void ConfigWindow::on_add_Btn_clicked()
+void MainWindow1::on_add_Btn_clicked()
 {
     if (config.copyGroup()) {
         refreshgroup();
@@ -4491,7 +4491,7 @@ void ConfigWindow::on_add_Btn_clicked()
 }
 
 // 删除工作组
-void ConfigWindow::on_suf_Btn_clicked()
+void MainWindow1::on_suf_Btn_clicked()
 {
     if(ui->group_comboBox->currentText()!="0")
     {
@@ -4506,7 +4506,7 @@ void ConfigWindow::on_suf_Btn_clicked()
 }
 
 // 保存参数
-void ConfigWindow::on_pushButton_47_clicked()
+void MainWindow1::on_pushButton_47_clicked()
 {
     emit App::getInstance()->refresh_Allpara();
     emit App::getInstance()->signal_GateView_Refresh();
@@ -4519,7 +4519,7 @@ void ConfigWindow::on_pushButton_47_clicked()
 }
 
 // 开始扫查
-void ConfigWindow::on_pushButton_48_clicked()
+void MainWindow1::on_pushButton_48_clicked()
 {
     ui->View_1->clearSeries();
 
@@ -4529,13 +4529,13 @@ void ConfigWindow::on_pushButton_48_clicked()
 }
 
 // 停止扫查
-void ConfigWindow::on_pushButton_49_clicked()
+void MainWindow1::on_pushButton_49_clicked()
 {
     config.startCapture(false);
 }
 
 // 龙门位置
-void ConfigWindow::on_pushButton_50_clicked()
+void MainWindow1::on_pushButton_50_clicked()
 {
     qDebug() << "用户点击获取龙门位置";
 
@@ -4551,7 +4551,7 @@ void ConfigWindow::on_pushButton_50_clicked()
         double x = settings.value("GantryX_mm", "0").toString().toDouble();
         double y = settings.value("GantryY_mm", "0").toString().toDouble();
 
-        qDebug() << "[ConfigWindow] 龙门位置: X=" << x << " mm, Y=" << y << " mm";
+        qDebug() << "[MainWindow1] 龙门位置: X=" << x << " mm, Y=" << y << " mm";
 
         ui->doubleSpinBox_4->setValue(x);
         ui->doubleSpinBox_5->setValue(y);
@@ -4559,24 +4559,24 @@ void ConfigWindow::on_pushButton_50_clicked()
 }
 
 
-void ConfigWindow::on_pushButton_51_clicked()
+void MainWindow1::on_pushButton_51_clicked()
 {
     ui->doubleSpinBox_4->clear();
     ui->doubleSpinBox_5->clear();
 }
 
-void ConfigWindow::on_comboBox_currentTextChanged(const QString &arg1)
+void MainWindow1::on_comboBox_currentTextChanged(const QString &arg1)
 {
     qDebug() << "切换到" << ui->comboBox->currentText() << "模式";
 }
 
 
-void ConfigWindow::on_comboBox_2_currentTextChanged(const QString &arg1)
+void MainWindow1::on_comboBox_2_currentTextChanged(const QString &arg1)
 {
     qDebug() << "切换到" << ui->comboBox_2->currentText();
 }
 
-void ConfigWindow::on_pushButton_7_clicked()
+void MainWindow1::on_pushButton_7_clicked()
 {
     m_libKuka3D = Kuka3D::LibKuka3D::getInstance();
 
@@ -4584,7 +4584,7 @@ void ConfigWindow::on_pushButton_7_clicked()
 }
 
 
-void ConfigWindow::on_pushButton_36_clicked()
+void MainWindow1::on_pushButton_36_clicked()
 {
     m_libKuka3D = Kuka3D::LibKuka3D::getInstance();
 
@@ -4592,7 +4592,7 @@ void ConfigWindow::on_pushButton_36_clicked()
 }
 
 
-void ConfigWindow::on_doubleSpinBox_8_valueChanged(double arg1)
+void MainWindow1::on_doubleSpinBox_8_valueChanged(double arg1)
 {
     Thick = ui->doubleSpinBox_8->value();
 }

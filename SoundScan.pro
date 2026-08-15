@@ -97,10 +97,10 @@ SOURCES += \
     delmiaworker.cpp \
     phaselink_code/dialog/viewmodel.cpp \
     main.cpp \
-    configwindow.cpp \
+    mainwindow1.cpp \
     phaselink_code/mainwindow.cpp \
-    mainwindow5.cpp \
-    3DScan/mainwindow7.cpp \
+    mainwindow2.cpp \
+    3DScan/mainwindow3.cpp \
     3DScan/scandata.cpp \
     3DScan/scan.cpp \
     3DScan/vtkvboactor.cpp \
@@ -144,10 +144,10 @@ HEADERS += \
     phaselink_code/dialog/viewmodel.h \
     3DScan/scandata.h \
     phaselink_code/datadispatch.h \
-    configwindow.h \
+    mainwindow1.h \
     phaselink_code/mainwindow.h \
-    mainwindow5.h \
-    3DScan/mainwindow7.h \
+    mainwindow2.h \
+    3DScan/mainwindow3.h \
     3DScan/scan.h \
     3DScan/algorithm.h \
     3DScan/vtkvboactor.h \
@@ -195,10 +195,10 @@ FORMS += \
     phaselink_code/dialog/rulerwidget.ui \
     phaselink_code/dialog/sider.ui \
     phaselink_code/dialog/viewwidget.ui \
-    configwindow.ui \
+    mainwindow1.ui \
     phaselink_code/mainwindow.ui \
-    mainwindow5.ui \
-    3DScan/mainwindow7.ui
+    mainwindow2.ui \
+    3DScan/mainwindow3.ui
 
 RESOURCES += resources.qrc \
     phaselink_code/Qss.qrc

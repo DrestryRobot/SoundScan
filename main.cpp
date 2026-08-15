@@ -1,6 +1,6 @@
-﻿#include "configwindow.h"
+#include "mainwindow1.h"
 #include "phaselink_code/mainwindow.h"
-#include "mainwindow5.h"
+#include "mainwindow2.h"
 #include <windows.h>
 #include <algorithm>
 #include <QApplication>
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     vtkObject::GlobalWarningDisplayOff();
     vtkOutputWindow::GetInstance()->SetDisplayModeToNever();
 
-    QPixmap pixmap(":/images/images/splash1.png");
+    QPixmap pixmap(":/images/images/start.png");
     QSplashScreen splash(pixmap);
     splash.show();
 
@@ -51,21 +51,21 @@ int main(int argc, char *argv[])
     qApp->installTranslator(&lang);
 
     // 创建三个窗口实例
-    ConfigWindow w;    // 参数配置
+    MainWindow1 w;    // 参数配置
     MainWindow w3;     // 调试扫描
-    MainWindow5 w5;    // 扫描显示
-    w5.setMainWindow(&w);
+    MainWindow2 w2;    // 扫描显示
+    w2.setMainWindow(&w);
     w3.setWindowFlags(Qt::FramelessWindowHint);
 
     // 设置窗口标题
     w.setWindowTitle("参数配置");
     w3.setWindowTitle("调试扫描");
-    w5.setWindowTitle("扫描显示");
+    w2.setWindowTitle("扫描显示");
 
     // 默认显示主窗口全屏
-    w5.showFullScreen();
+    w2.showFullScreen();
     w.showFullScreen();
-    splash.finish(&w5);
+    splash.finish(&w2);
 
     // 参数配置->调试扫描
     QPushButton *btnToW3 = w.findChild<QPushButton*>("pushButton_45");  // 调试按钮
@@ -88,15 +88,15 @@ int main(int argc, char *argv[])
     });
 
     // 参数配置->扫查显示
-    QPushButton *btnToW5 = w.findChild<QPushButton*>("pushButton_33");  // 扫描显示按钮
-    QObject::connect(btnToW5, &QPushButton::clicked, [&]() {
-        w5.raise();
-        w5.activateWindow();
+    QPushButton *btnToW2 = w.findChild<QPushButton*>("pushButton_33");  // 扫描显示按钮
+    QObject::connect(btnToW2, &QPushButton::clicked, [&]() {
+        w2.raise();
+        w2.activateWindow();
     });
 
     // 扫查显示->参数配置
-    QPushButton *btnBackFromW5 = w5.findChild<QPushButton*>("pushButton_33");  // 返回按钮
-    QObject::connect(btnBackFromW5, &QPushButton::clicked, [&]() {
+    QPushButton *btnBackFromW2 = w2.findChild<QPushButton*>("pushButton_33");  // 返回按钮
+    QObject::connect(btnBackFromW2, &QPushButton::clicked, [&]() {
         w.raise();
         w.activateWindow();
     });
@@ -123,14 +123,14 @@ int main(int argc, char *argv[])
             if (sim->loadCsv(simFiles)) {
                 QObject::connect(sim, &SimDataPlayer::finished, &a, [&]() {
                     qDebug() << "[AutoSim] 模拟回放结束，结束绘制";
-                    if (w5.getMainWindow7())
-                        w5.getMainWindow7()->finishDrawing();
+                    if (w2.getMainWindow3())
+                        w2.getMainWindow3()->finishDrawing();
                 });
                 QTimer::singleShot(3000, &a, [&]() {
                     qDebug() << "[AutoSim] 启动模拟数据源并开始绘制";
                     sim->start();
-                    if (w5.getMainWindow7())
-                        w5.getMainWindow7()->startDrawing();
+                    if (w2.getMainWindow3())
+                        w2.getMainWindow3()->startDrawing();
                 });
             }
         } else {

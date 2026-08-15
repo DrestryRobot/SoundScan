@@ -1,11 +1,11 @@
-#include "mainwindow5.h"
+#include "mainwindow2.h"
 #include "datadispatch.h"
 
 
-MainWindow5 *MainWindow5::s_instance = nullptr;
+MainWindow2 *MainWindow2::s_instance = nullptr;
 
 namespace {
-    DataProcessor *g_dataProcessor5 = nullptr;
+    DataProcessor *g_dataProcessor2 = nullptr;
     std::atomic<int> g_dataSeq3 { 0 };
 
     void dataPacketCallback(const char *data, int length, int deviceId)
@@ -13,22 +13,22 @@ namespace {
         QByteArray qba(data, length);
         delete[] data;
 
-        if (MainWindow5::s_instance)
-            MainWindow5::s_instance->onDataPacket(qba, deviceId);
+        if (MainWindow2::s_instance)
+            MainWindow2::s_instance->onDataPacket(qba, deviceId);
 
-        if (g_dataProcessor5) {
+        if (g_dataProcessor2) {
             int seq = g_dataSeq3.load();
-            QMetaObject::invokeMethod(g_dataProcessor5, [=]() {
+            QMetaObject::invokeMethod(g_dataProcessor2, [=]() {
                 if (seq == g_dataSeq3.load())
-                    g_dataProcessor5->enqueueData(qba, deviceId);
+                    g_dataProcessor2->enqueueData(qba, deviceId);
             }, Qt::QueuedConnection);
         }
     }
 }
 
-MainWindow5::MainWindow5(QWidget *parent)
+MainWindow2::MainWindow2(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow5)
+    , ui(new Ui::MainWindow2)
     , config(Client::getInstance())
 {
 
@@ -46,7 +46,7 @@ MainWindow5::MainWindow5(QWidget *parent)
     m_dataProcessor->start();
 }
 
-MainWindow5::~MainWindow5()
+MainWindow2::~MainWindow2()
 {
     DataDispatch::removeProcessor(m_dataProcessor);
     DataDispatch::removeDirectSink(m_directSink);
@@ -56,13 +56,13 @@ MainWindow5::~MainWindow5()
 }
 
 // 初始化超声界面
-void MainWindow5::initWidget()
+void MainWindow2::initWidget()
 {
     m_processorThread = new QThread(this);
     m_processorThread->setObjectName(QStringLiteral("DataProcessorThread"));
     m_dataProcessor = new DataProcessor();
     m_dataProcessor->moveToThread(m_processorThread);
-    g_dataProcessor5 = m_dataProcessor;
+    g_dataProcessor2 = m_dataProcessor;
     m_processorThread->start();
 
     m_beamCount = config.getBeamCounts();
@@ -115,7 +115,7 @@ void MainWindow5::initWidget()
 }
 
 // 初始化超声信号
-void MainWindow5::initSlot()
+void MainWindow2::initSlot()
 {
     config.setDataPacketCallback(DataDispatch::dataPacketCallback);
 
@@ -129,63 +129,63 @@ void MainWindow5::initSlot()
     });
 
     connect(App::getInstance(), &App::signal_GateView_Refresh, this,
-            &MainWindow5::slot_rulerWidgetChanged);
+            &MainWindow2::slot_rulerWidgetChanged);
 
     connect(App::getInstance(), &App::signal_probeChange, this,
-            &MainWindow5::slot_rulerProbeChanged);
+            &MainWindow2::slot_rulerProbeChanged);
 
     connect(App::getInstance(), &App::signal_paletteChanged, this, [=] {
         ui->View_2->setColorPalette(ui->S_Scan_Color->getColors());
     });
 }
 
-void MainWindow5::setupChildWindow()
+void MainWindow2::setupChildWindow()
 {
-    if (!mainWindow7) {
-        // ===== 创建 MainWindow7 =====
-        mainWindow7 = new MainWindow7();
+    if (!mainWindow3) {
+        // ===== 创建 MainWindow3 =====
+        mainWindow3 = new MainWindow3();
 
         // ===== 设置父窗口 =====
-        mainWindow7->setParent(ui->widget);
+        mainWindow3->setParent(ui->widget);
 
         // ===== 关键：设置窗口标志 =====
-        mainWindow7->setWindowFlags(Qt::Widget | Qt::FramelessWindowHint);
+        mainWindow3->setWindowFlags(Qt::Widget | Qt::FramelessWindowHint);
 
         // ===== 关键：设置原生窗口属性 =====
-        mainWindow7->setAttribute(Qt::WA_DontCreateNativeAncestors);
-        mainWindow7->setAttribute(Qt::WA_NativeWindow);
+        mainWindow3->setAttribute(Qt::WA_DontCreateNativeAncestors);
+        mainWindow3->setAttribute(Qt::WA_NativeWindow);
 
         // ===== 布局，填满父窗口 =====
         QVBoxLayout *layout = new QVBoxLayout(ui->widget);
         layout->setContentsMargins(0, 0, 0, 0);
         layout->setSpacing(0);
-        layout->addWidget(mainWindow7);
+        layout->addWidget(mainWindow3);
         ui->widget->setLayout(layout);
     }
 
-    mainWindow7->show();
+    mainWindow3->show();
 }
 
 // 扫描开始（快捷指令）
-void MainWindow5::on_pushButton_29_clicked()
+void MainWindow2::on_pushButton_29_clicked()
 {
     mainWindow->on_pushButton_9();
 }
 
 // 扫描暂停（快捷指令）
-void MainWindow5::on_pushButton_30_clicked()
+void MainWindow2::on_pushButton_30_clicked()
 {
     mainWindow->on_pushButton_19();
 }
 
 // 扫描结束（快捷指令）
-void MainWindow5::on_pushButton_38_clicked()
+void MainWindow2::on_pushButton_38_clicked()
 {
     mainWindow->on_pushButton_20();
 }
 
 // 退出系统（快捷指令）
-void MainWindow5::on_pushButton_34_clicked()
+void MainWindow2::on_pushButton_34_clicked()
 {
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(this, "确认退出", "确定要退出吗？",
@@ -195,7 +195,7 @@ void MainWindow5::on_pushButton_34_clicked()
     }
 }
 
-void MainWindow5::slot_rulerWidgetChanged()
+void MainWindow2::slot_rulerWidgetChanged()
 {
     ui->ruler_range->setRulerUnit("mm");
     ui->ruler_range->setDirections(Directions::Vertical_left);
@@ -204,7 +204,7 @@ void MainWindow5::slot_rulerWidgetChanged()
     ui->ruler_range->setPosEnd(config.getRangeEnd());
 }
 
-void MainWindow5::slot_rulerProbeChanged()
+void MainWindow2::slot_rulerProbeChanged()
 {
     auto num =
         config.getBeamLastElement() - config.getBeamFirstElement() - config.getBeamAperture() + 1;
@@ -214,7 +214,7 @@ void MainWindow5::slot_rulerProbeChanged()
     ui->ruler_distance_s->setPosEnd(end);
 }
 
-void MainWindow5::onDataPacket(const QByteArray &data, int deviceId)
+void MainWindow2::onDataPacket(const QByteArray &data, int deviceId)
 {
     int beamCount = m_beamCount;
     QMetaObject::invokeMethod(m_3dWorker, [=]() {

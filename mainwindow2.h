@@ -1,35 +1,35 @@
-﻿#ifndef MAINWINDOW5_H
-#define MAINWINDOW5_H
+#ifndef MAINWINDOW2_H
+#define MAINWINDOW2_H
 
 #include <client.h>
 #include <QMainWindow>
 #include <QDockWidget>
 #include "datadispatch.h"
-#include <configwindow.h>
-#include "ui_mainwindow5.h"
+#include <mainwindow1.h>
+#include "ui_mainwindow2.h"
 #include "dialog/viewmodel.h"
 #include "dialog/viewwidget.h"
 
-#include <mainwindow7.h>
+#include <mainwindow3.h>
 
 namespace Ui {
-class MainWindow5;
+class MainWindow2;
 }
 
-class MainWindow5 : public QMainWindow
+class MainWindow2 : public QMainWindow
 {
     Q_OBJECT
 
 public:
 
-    explicit MainWindow5(QWidget *parent = nullptr);
+    explicit MainWindow2(QWidget *parent = nullptr);
 
-    ~MainWindow5();
+    ~MainWindow2();
 
-    static MainWindow5 *s_instance;
+    static MainWindow2 *s_instance;
 
-    void setMainWindow(ConfigWindow *mainWin) { mainWindow = mainWin; }
-    MainWindow7 *getMainWindow7() const { return mainWindow7; }
+    void setMainWindow(MainWindow1 *mainWin) { mainWindow = mainWin; }
+    MainWindow3 *getMainWindow3() const { return mainWindow3; }
 
     void onDataPacket(const QByteArray &data, int deviceId);
 private:
@@ -56,9 +56,9 @@ private slots:
     void slot_rulerProbeChanged();
 
 private:
-    Ui::MainWindow5 *ui;
+    Ui::MainWindow2 *ui;
 
-    ConfigWindow *mainWindow = nullptr;
+    MainWindow1 *mainWindow = nullptr;
 
     Client &config;
     bool IsScaning = false;
@@ -81,9 +81,9 @@ private:
     QString dateStr = today.toString("yyyy-MM-dd");
     QString logPath = "C:/超声扫描/日志/系统日志" + dateStr + ".txt";
 
-    MainWindow7 *mainWindow7 = nullptr;
+    MainWindow3 *mainWindow3 = nullptr;
 
     void setupChildWindow();
 };
 
-#endif // MAINWINDOW5_H
+#endif // MAINWINDOW2_H
