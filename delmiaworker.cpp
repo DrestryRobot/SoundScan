@@ -1,4 +1,4 @@
-#include "DelmiaWorker.h"
+#include "delmiaworker.h"
 #include <QDebug>
 #include <QDir>
 #include <QFile>

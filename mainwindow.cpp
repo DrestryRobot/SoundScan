@@ -2,6 +2,7 @@
 #include "mainwindow5.h"
 #include "ui_mainwindow.h"
 #include "datadispatch.h"
+#include "3DScan/scandata.h"
 
 ads_client adsClient;
 
@@ -12,10 +13,6 @@ extern double amp[], tof[], si;
 extern int beam;
 
 extern double robot_x, robot_y,robot_z,robot_a,robot_b,robot_c;
-
-double longmen[2];
-
-bool start;
 
 extern quint32 robot_ipoc;
 
@@ -1931,11 +1928,6 @@ bool MainWindow::calculateAndUpdateZBFourPoints(const QString &projectName)
     return true;
 }
 
-void MainWindow::startDebug()
-{
-
-}
-
 void MainWindow::init3DCheckerSlot()
 {
     connect(this, &MainWindow::requestStartDrawing,
@@ -2010,7 +2002,7 @@ void MainWindow::onRequestStartDrawing()
 
     startCsvWriter();
 
-    start = true;
+    m_start = true;
 }
 
 void MainWindow::onRequestStopDrawing()
@@ -2022,7 +2014,7 @@ void MainWindow::onRequestStopDrawing()
     // 关闭CSV文件
     closeCsvFile();
 
-    start = false;
+    m_start = false;
 
     // 扫描结束
     MainWindow::on_pushButton_20_clicked();

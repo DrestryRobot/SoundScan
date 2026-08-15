@@ -2,13 +2,9 @@
 #include <QDebug>
 #include <kuka3denums.h>
 #include <libkuka3d.h>
+#include "3DScan/scandata.h"
 
 extern double Thick;
-
-double amp[64];
-double tof[64];
-double si;
-int beam;
 
 double sumSi = 0.0;
 int validBeamCount = 0;

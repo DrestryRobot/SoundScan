@@ -1,6 +1,6 @@
 QT       += core gui network charts widgets xml
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets axcontainer opengl
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets axcontainer opengl openglwidgets
 
 CONFIG += c++17
 
@@ -49,6 +49,7 @@ LIBS += -lvtkGUISupportQt-9.6 \
         -lvtkInteractionStyle-9.6 \
         -lvtkInteractionWidgets-9.6 \
         -lvtkCommonCore-9.6 \
+        -lvtkCommonMath-9.6 \
         -lvtkCommonDataModel-9.6 \
         -lvtkCommonExecutionModel-9.6 \
         -lvtkCommonTransforms-9.6 \
@@ -58,12 +59,33 @@ LIBS += -lvtkGUISupportQt-9.6 \
         -lvtkFiltersModeling-9.6 \
         -lvtkFiltersGeometry-9.6 \
         -lvtkIOImage-9.6 \
+        -lvtkIOPLY-9.6 \
         -lvtkImagingGeneral-9.6 \
         -lvtkImagingCore-9.6 \
         -lvtkImagingHybrid-9.6 \
         -lvtkImagingSources-9.6 \
         -lvtkViewsQt-9.6 \
         -lvtksys-9.6
+
+# ============ CUDA (3DScan/algorithm.cu) ============
+CUDA_DIR = C:/CUDA/v13.3
+CUDA_ARCH = sm_86
+INCLUDEPATH += $$PWD $$PWD/3DScan $$CUDA_DIR/include $$CUDA_DIR/common/inc
+QMAKE_LIBDIR += $$CUDA_DIR/lib/x64
+LIBS += -lcudart -lcublas -lcufft
+CONFIG(debug, debug|release) {
+    CUDA_XCOMPILER = /MDd
+} else {
+    CUDA_XCOMPILER = /MD
+}
+# Compile algorithm.cu with nvcc before linking (works for any build dir).
+cuda_prebuild.target = $$OUT_PWD/algorithm.obj
+cuda_prebuild.commands = cmd /c "\"$$CUDA_DIR/bin/nvcc.exe --machine 64 -arch=$$CUDA_ARCH -c -o $$OUT_PWD/algorithm.obj $$PWD/3DScan/algorithm.cu -Xcompiler $$CUDA_XCOMPILER\""
+cuda_prebuild.depends = $$PWD/3DScan/algorithm.cu $$PWD/3DScan/algorithm.h
+QMAKE_EXTRA_TARGETS += cuda_prebuild
+PRE_TARGETDEPS += $$OUT_PWD/algorithm.obj
+OBJECTS += $$OUT_PWD/algorithm.obj
+OTHER_FILES += $$PWD/3DScan/algorithm.cu
 
 SOURCES += \
     UI/UT/acg_tcg_widget.cpp \
@@ -96,10 +118,13 @@ SOURCES += \
     dialog/viewworker.cpp \
     main.cpp \
     datadispatch.cpp \
+    3DScan/scandata.cpp \
     mainwindow.cpp \
     mainwindow3.cpp \
     mainwindow5.cpp \
-    mainwindow7.cpp \
+    3DScan/mainwindow7.cpp \
+    3DScan/scan.cpp \
+    3DScan/vtkvboactor.cpp \
     ndtbase.cpp \
     tcpserver.cpp \
     udpserver.cpp
@@ -134,10 +159,14 @@ HEADERS += \
     dialog/viewwidget.h \
     dialog/viewworker.h \
     datadispatch.h \
+    3DScan/scandata.h \
     mainwindow.h \
     mainwindow3.h \
     mainwindow5.h \
-    mainwindow7.h \
+    3DScan/mainwindow7.h \
+    3DScan/scan.h \
+    3DScan/algorithm.h \
+    3DScan/vtkvboactor.h \
     ndtbase.h \
     tcpserver.h \
     udpserver.h
@@ -159,7 +188,7 @@ FORMS += \
     mainwindow.ui \
     mainwindow3.ui \
     mainwindow5.ui \
-    mainwindow7.ui
+    3DScan/mainwindow7.ui
 
 RESOURCES += resources.qrc \
     Qss.qrc \

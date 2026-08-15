@@ -1,4 +1,4 @@
-#include "colorManager.h"
+#include "colormanager.h"
 #include "dialog/viewwidget.h"
 #include <QtGlobal>
 

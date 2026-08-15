@@ -1,0 +1,49 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "SoundScan Debug (构建 + 调试)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Desktop_Qt_6_8_3_MSVC2022_64bit-Debug/debug/SoundScan.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/Desktop_Qt_6_8_3_MSVC2022_64bit-Debug/debug",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:\\Qt\\6.8.3\\msvc2022_64\\bin;C:\\Program Files (x86)\\VTK\\bin;C:\\Phaselink\\lib;C:\\LibKuka3D\\lib;C:\\TwinCAT\\AdsApi\\TcAdsDll\\x64\\bin;C:\\Users\\23714\\AppData\\Local\\Programs\\Python\\Python313;${env:PATH}"
+                },
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "C:\\Qt\\6.8.3\\msvc2022_64\\plugins"
+                }
+            ],
+            "preLaunchTask": "SoundScan: qmake + nmake (Debug)",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "SoundScan Release (构建 + 运行)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Desktop_Qt_6_8_3_MSVC2022_64bit-Release/release/SoundScan.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/Desktop_Qt_6_8_3_MSVC2022_64bit-Release/release",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:\\Qt\\6.8.3\\msvc2022_64\\bin;C:\\Program Files (x86)\\VTK\\bin;C:\\Phaselink\\lib;C:\\LibKuka3D\\lib;C:\\TwinCAT\\AdsApi\\TcAdsDll\\x64\\bin;C:\\Users\\23714\\AppData\\Local\\Programs\\Python\\Python313;${env:PATH}"
+                },
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "C:\\Qt\\6.8.3\\msvc2022_64\\plugins"
+                }
+            ],
+            "preLaunchTask": "SoundScan: qmake + nmake (Release)",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        }
+    ]
+}

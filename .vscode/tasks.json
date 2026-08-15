@@ -1,0 +1,44 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "SoundScan: qmake + nmake (Debug)",
+            "type": "shell",
+            "command": "cmd",
+            "args": [
+                "/d",
+                "/c",
+                "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && \"C:\\Qt\\6.8.3\\msvc2022_64\\bin\\qmake.exe\" \"${workspaceFolder}\\SoundScan.pro\" -spec win32-msvc CONFIG+=debug && nmake"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build/Desktop_Qt_6_8_3_MSVC2022_64bit-Debug"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "detail": "调用 vcvars64 后执行 qmake + nmake，生成 Debug 版 SoundScan.exe"
+        },
+        {
+            "label": "SoundScan: qmake + nmake (Release)",
+            "type": "shell",
+            "command": "cmd",
+            "args": [
+                "/d",
+                "/c",
+                "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && \"C:\\Qt\\6.8.3\\msvc2022_64\\bin\\qmake.exe\" \"${workspaceFolder}\\SoundScan.pro\" -spec win32-msvc CONFIG+=release && nmake"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build/Desktop_Qt_6_8_3_MSVC2022_64bit-Release"
+            },
+            "group": "build",
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "detail": "调用 vcvars64 后执行 qmake + nmake，生成 Release 版 SoundScan.exe"
+        }
+    ]
+}

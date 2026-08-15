@@ -3,9 +3,7 @@
 #include <QDebug>
 
 #include <QDateTime>
-
-double robot_x, robot_y,robot_z,robot_a,robot_b,robot_c;
-quint32 robot_ipoc;
+#include "3DScan/scandata.h"
 
 UdpServer::UdpServer(QObject *parent) : QObject(parent)
 {
