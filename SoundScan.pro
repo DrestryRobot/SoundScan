@@ -132,9 +132,6 @@ SOURCES += \
     Phaselink/dialog/viewwidget.cpp \
     Phaselink/dialog/viewworker.cpp
 
-SOURCES += \
-    $$PWD/Phaselink/simulation/SimDataPlayer.cpp
-
 HEADERS += \
     ads_client.h \
     ads_read_thread.h \
@@ -178,9 +175,6 @@ HEADERS += \
     Phaselink/dialog/sider.h \
     Phaselink/dialog/viewwidget.h \
     Phaselink/dialog/viewworker.h
-
-HEADERS += \
-    $$PWD/Phaselink/simulation/SimDataPlayer.h
 
 FORMS += \
     Phaselink/UI/scanning.ui \

@@ -6,23 +6,15 @@
 #include <QApplication>
 #include <QByteArray>
 #include <QCoreApplication>
-#include <QFile>
-#include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QPushButton>
 #include <QDebug>
-#include <QTemporaryFile>
-#include <QTimer>
 #include <QTranslator>
 #include <QSurfaceFormat>
 #include <QSplashScreen>
 #include <QString>
-#include <QTextStream>
-#include <QtMath>
 #include <vtkObject.h>
 #include <vtkOutputWindow.h>
-
-#include "simulation/SimDataPlayer.h"
 
 int main(int argc, char *argv[])
 {
@@ -46,8 +38,6 @@ int main(int argc, char *argv[])
     QCommandLineParser parser;
     parser.setApplicationDescription("SoundScan");
     parser.addHelpOption();
-    parser.addOption(QCommandLineOption("simulate-test",
-                                        "Run a short built-in simulation and exit when it finishes."));
     parser.process(a);
 
     // 禁止 VTK 弹出独立输出窗口（错误/警告信息不再弹窗）
@@ -113,77 +103,6 @@ int main(int argc, char *argv[])
         w.raise();
         w.activateWindow();
     });
-
-    // ===== 模拟数据源（点击“扫描开始”时启动）=====
-    // 环境变量 SIM_CSV 指定录制文件（分号分隔）；未设置时使用默认 Downloads 录制文件。
-    // 存在录制文件时：注册给主界面，点击“扫描开始”后才开始回放 + 3D 开始绘制，
-    // 整条链路用模拟数据运行。--simulate-test 模式除外：启动后 3 秒自动开始回放并退出。
-    {
-        QStringList simFiles;
-        QTemporaryFile *testCsv = nullptr;
-        const bool simulateTest = parser.isSet("simulate-test");
-        QByteArray simEnv = qgetenv("SIM_CSV");
-        if (simulateTest) {
-            testCsv = new QTemporaryFile(&a);
-            testCsv->setAutoRemove(true);
-            if (testCsv->open()) {
-                QTextStream out(testCsv);
-                out << "X,Y,Z,A,B,C,SI";
-                for (int i = 1; i <= 49; ++i)
-                    out << ",AMP_" << i << ",TOF_" << i;
-                out << ",BEAM,LX,LY\n";
-                for (int row = 0; row < 250; ++row) {
-                    out << row * 0.1 << ',' << row * 0.05 << ',' << 10.0 + row * 0.01
-                        << ",0,0,0," << 0.5 + 0.1 * qSin(row / 20.0);
-                    for (int i = 0; i < 49; ++i)
-                        out << ',' << (0.2 + 0.001 * row + i * 0.002)
-                            << ',' << (1.0 + i * 0.01);
-                    out << ",49," << row * 0.1 << ',' << row * 0.05 << '\n';
-                }
-                out.flush();
-                testCsv->flush();
-                testCsv->close();
-                simFiles << testCsv->fileName();
-                qDebug() << "[AutoSim] using built-in test data:" << testCsv->fileName();
-            }
-        } else if (!simEnv.isEmpty()) {
-            simFiles = QString::fromLocal8Bit(simEnv).split(';', Qt::SkipEmptyParts);
-        } else {
-            const QString def1 = "C:/Users/23714/Downloads/scan_20260717_141034.csv";
-            const QString def2 = "C:/Users/23714/Downloads/scan_20260717_133933.csv";
-            if (QFile::exists(def1))
-                simFiles << def1;
-            if (QFile::exists(def2))
-                simFiles << def2;
-        }
-
-        if (!simFiles.isEmpty()) {
-            SimDataPlayer *sim = new SimDataPlayer(&a);
-            if (sim->loadCsv(simFiles)) {
-                // 交由主界面在点击“扫描开始”时启动模拟数据源
-                w.setSimulationPlayer(sim);
-                QObject::connect(sim, &SimDataPlayer::finished, &a, [&]() {
-                    qDebug() << "[AutoSim] simulation finished; stopping drawing";
-                    if (w2.getMainWindow3())
-                        w2.getMainWindow3()->finishDrawing();
-                    if (simulateTest)
-                        QTimer::singleShot(200, &a, &QCoreApplication::quit);
-                });
-                if (simulateTest) {
-                    QTimer::singleShot(3000, &a, [&]() {
-                        qDebug() << "[AutoSim] starting simulation and drawing";
-                        sim->start();
-                        if (w2.getMainWindow3())
-                            w2.getMainWindow3()->startDrawing();
-                    });
-                } else {
-                    qDebug() << "[AutoSim] simulation ready; will start on scan-start click";
-                }
-            }
-        } else {
-            qDebug() << "[AutoSim] no recording file found; simulation skipped";
-        }
-    }
 
     return a.exec();
 }

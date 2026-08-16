@@ -37,7 +37,6 @@
 #include "colormanager.h"
 #include "debugoutput.h"
 #include "delmiaworker.h"
-#include "simulation/SimDataPlayer.h"
 
 enum GATE { GATE_A, GATE_B, GATE_C, GATE_I };
 enum GATE_Sync { Sync_false, Sync_gate_I, Sync_gate_A, Sync_gate_B };
@@ -57,8 +56,6 @@ public:
     MainWindow1(QWidget *parent = nullptr);
 
     ~MainWindow1();
-
-    void setSimulationPlayer(SimDataPlayer *player) { m_simulator = player; }
 
     void on_pushButton_9();                  // 扫描开始（外部调用）
 
@@ -313,7 +310,6 @@ private slots:
 private:
 
     Ui::MainWindow1 *ui;
-    SimDataPlayer *m_simulator = nullptr;
     
     // 运动控制
     UdpServer* server;

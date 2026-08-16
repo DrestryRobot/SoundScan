@@ -2916,12 +2916,6 @@ void MainWindow1::on_pushButton_9_clicked()
 // 扫描开始（外部调用）
 void MainWindow1::on_pushButton_9()
 {
-    const bool simStarted = m_simulator && !m_simulator->isRunning();
-    if (simStarted) {
-        qDebug() << "[AutoSim] scan-start clicked; starting simulation";
-        m_simulator->start();
-    }
-
     MainWindow1::on_pushButton_28_clicked(); // 龙门电机失能
 
     adsClient.setIntVal(0x5EB08, ui->comboBox_2->currentIndex()+1);
@@ -2932,14 +2926,6 @@ void MainWindow1::on_pushButton_9()
         adsClient.setIntVal(0x5E256, 1);
         // 不立即开始绘制：等"机器人开始扫板"信号（PLC 变量0 跳变）到达后再触发
         m_scanStartPending = true;
-    }
-    // 模拟数据源已启动：没有 PLC 机器人信号链路，直接开始 3D 绘制
-    if (simStarted) {
-        if (MainWindow2::s_instance) {
-            MainWindow3 *mw3 = MainWindow2::s_instance->getMainWindow3();
-            if (mw3)
-                mw3->startDrawing();
-        }
     }
     // 调试：打印扫描开始写入/读回的 PLC 值
     qDebug() << "[ScanCtrl] 扫描开始: 0x5EB08=" << adsClient.getIntVal(0x5EB08)

@@ -1,5 +1,10 @@
 # Build output
-build/
+build/*
+!build/release/
+build/release/*
+!build/release/release/
+build/release/release/*
+!build/release/release/default_config.json
 
 # Compiled / generated files
 *.obj
@@ -23,6 +28,6 @@ compile_commands.json
 
 # Independent nested git repositories (managed in their own repos)
 3dscan/
-phaselink_code/
+Phaselink/
 global/
 logs/
