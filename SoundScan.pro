@@ -25,10 +25,6 @@ LIBS += -L"C:\TwinCAT\AdsApi\TcAdsDll\x64\lib" -lTcAdsDll
 INCLUDEPATH += "C:\Phaselink\include"
 LIBS += -L"C:\Phaselink\lib" -lclient
 
-# LibKuka3D
-INCLUDEPATH += "C:\LibKuka3D\include"
-LIBS += -L"C:\LibKuka3D\lib" -lLibKuka3D
-
 # Python 3.13
 INCLUDEPATH += C:/Users/23714/AppData/Local/Programs/Python/Python313/include
 LIBS += -LC:/Users/23714/AppData/Local/Programs/Python/Python313/libs -lpython313
@@ -90,6 +86,7 @@ OTHER_FILES += $$PWD/3dscan/algorithm.cu
 # SoundScan-only sources
 SOURCES += \
     ads_client.cpp \
+    ads_poller.cpp \
     ads_read_thread.cpp \
     colormanager.cpp \
     Phaselink/datadispatch.cpp \
@@ -134,6 +131,7 @@ SOURCES += \
 
 HEADERS += \
     ads_client.h \
+    ads_poller.h \
     ads_read_thread.h \
     colormanager.h \
     debugoutput.h \

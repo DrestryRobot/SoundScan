@@ -8,6 +8,9 @@
 // windows
 #include <windows.h>
 
+// qt
+#include <QMutex>
+
 // user
 #include "TcAdsDef.h"
 #include "TcAdsAPI.h"
@@ -47,6 +50,7 @@ private:
     USHORT  nAdsState;        //PLC状态信息
     USHORT  nDeviceState;
     bool m_connected = false; //ADS连接成功标志
+    QMutex m_mutex;           // ADS 端口不支持并发请求，多线程访问需串行化
 };
 
 #endif // ADS_CLIENT_H

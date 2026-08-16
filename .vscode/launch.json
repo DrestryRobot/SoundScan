@@ -12,7 +12,7 @@
             "environment": [
                 {
                     "name": "PATH",
-                    "value": "C:\\Qt\\6.8.3\\msvc2022_64\\bin;C:\\Program Files (x86)\\VTK\\bin;C:\\Phaselink\\lib;C:\\LibKuka3D\\lib;C:\\TwinCAT\\AdsApi\\TcAdsDll\\x64\\bin;C:\\Users\\23714\\AppData\\Local\\Programs\\Python\\Python313;${env:PATH}"
+                    "value": "C:\\Qt\\6.8.3\\msvc2022_64\\bin;C:\\Program Files (x86)\\VTK\\bin;C:\\Phaselink\\lib;C:\\TwinCAT\\AdsApi\\TcAdsDll\\x64\\bin;C:\\Users\\23714\\AppData\\Local\\Programs\\Python\\Python313;${env:PATH}"
                 }
             ],
             "preLaunchTask": "Build SoundScan",

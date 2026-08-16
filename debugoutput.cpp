@@ -98,7 +98,6 @@ void DebugOutput::messageHandler(QtMsgType type, const QMessageLogContext& conte
         "s_x", "s_y",
         "Law info updated",
         "Frequency Stats",
-        "LibKuka3D",
 
         "TimestampInterpolator",
 
@@ -165,11 +164,6 @@ void DebugOutput::messageHandler(QtMsgType type, const QMessageLogContext& conte
     //     return;
     // }
 
-
-    // // 屏蔽 Law info updated 输出
-    // if (msg.contains("LibKuka3D")) {
-    //     return;
-    // }
 
     // // 屏蔽 Law info updated 输出
     // if (msg.contains("CSCAN_3D")) {

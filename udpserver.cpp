@@ -2,6 +2,7 @@
 #include <QNetworkDatagram>
 #include <QDebug>
 #include <QElapsedTimer>
+#include <QThread>
 
 #include <QDateTime>
 #include "3dscan/scandata.h"
@@ -91,10 +92,6 @@ void UdpServer::parseXmlData(const QByteArray &xmlData)
             //                 .arg(robot_c, 0, 'f', 4);
 
             robot_ipoc = ipoc;
-
-            // m_libKuka3D = Kuka3D::LibKuka3D::getInstance();
-
-            // m_libKuka3D->addRobotPosition(robot_x, robot_y, robot_z, robot_a, robot_b, robot_c, 0, 0, robot_ipoc);
 
             // 调试：每秒统计一次机器人数据帧率/IPOC/位姿
             static int robotFrameCount = 0;

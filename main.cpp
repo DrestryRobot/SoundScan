@@ -33,6 +33,15 @@ int main(int argc, char *argv[])
             qputenv("QT_SCALE_FACTOR", QByteArray::number(scale, 'g', 8));
     }
 
+    // 关闭垂直同步：点云重绘由 3DScan 限帧定时器控制，
+    // 避免 renderWindow->Render() 被显示器刷新率/交换阻塞拖慢。
+    {
+        QSurfaceFormat fmt;
+        fmt.setSwapInterval(0);
+        fmt.setSamples(0);   // 关闭 OpenGL 多采样（4K 下代价大）
+        QSurfaceFormat::setDefaultFormat(fmt);
+    }
+
     QApplication a(argc, argv);
 
     QCommandLineParser parser;

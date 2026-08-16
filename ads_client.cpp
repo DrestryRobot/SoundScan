@@ -7,6 +7,7 @@ ads_client::ads_client() {}
 
 void ads_client::AdsConnectLocal()
 {
+    QMutexLocker locker(&m_mutex);
     pAddr = &Addr;
 
     nPort = AdsPortOpen();
@@ -47,6 +48,7 @@ void ads_client::AdsConnectLocal()
 
 void ads_client::AdsConnectRemote()
 {
+    QMutexLocker locker(&m_mutex);
     Addr = {{192,168,10,22,1,1}}; // 定义AMS地址变量
     pAddr = &Addr;
     nPort = AdsPortOpen();
@@ -82,12 +84,14 @@ void ads_client::AdsConnectRemote()
 
 void ads_client::getRoboMotionInfo()
 {
+    QMutexLocker locker(&m_mutex);
     if (!m_connected) return;
     AdsSyncReadReq(pAddr, 0x4020, 100, sizeof(g_RoboMotionInfo), &g_RoboMotionInfo);
 }
 
 float ads_client::getFloatVal(int offsetAddr)
 {
+    QMutexLocker locker(&m_mutex);
     if (!m_connected) return 0.0f;
     float getVal = 0.0f;
 
@@ -98,12 +102,14 @@ float ads_client::getFloatVal(int offsetAddr)
 
 void ads_client::setFloatVal(int offsetAddr, float setVal)
 {
+    QMutexLocker locker(&m_mutex);
     if (!m_connected) return;
     AdsSyncWriteReq(pAddr, 0x4020, offsetAddr, sizeof(float), &setVal);
 }
 
 short ads_client::getIntVal(int offsetAddr)
 {
+    QMutexLocker locker(&m_mutex);
     if (!m_connected) return 0;
     short getVal = 0;
 
@@ -114,6 +120,7 @@ short ads_client::getIntVal(int offsetAddr)
 
 bool ads_client::getBoolVal(int offsetAddr)
 {
+    QMutexLocker locker(&m_mutex);
     if (!m_connected) return false;
     bool getVal = false;
 
@@ -124,6 +131,7 @@ bool ads_client::getBoolVal(int offsetAddr)
 
 void ads_client::setIntVal(int offsetAddr, short setVal)
 {
+    QMutexLocker locker(&m_mutex);
     if (!m_connected) return;
     AdsSyncWriteReq(pAddr, 0x4020, offsetAddr, sizeof(short), &setVal);
 }

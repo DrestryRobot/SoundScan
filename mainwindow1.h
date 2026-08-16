@@ -14,19 +14,20 @@
 #include <QDialog>
 #include <QInputDialog>
 #include <QProgressDialog>
+#include <QFuture>
+#include <QAtomicInt>
 
 // 超声扫描
 #include "client.h"
-#include "libkuka3d.h"
-#include "dialog/viewwidget.h"
-#include "dialog/dataprocessor.h"
-#include "dialog/PacketDataSaver.h"
-#include "dialog/measurewidget.h"
-#include "dialog/viewmodel.h"
-#include "dialog/sider.h"
-#include "UI/UT/essentialwidget.h"
-#include "UI/UT/acg_tcg_widget.h"
-#include "dialog/addsud_group.h"
+#include "Phaselink/dialog/viewwidget.h"
+#include "Phaselink/dialog/dataprocessor.h"
+#include "Phaselink/dialog/PacketDataSaver.h"
+#include "Phaselink/dialog/measurewidget.h"
+#include "Phaselink/dialog/viewmodel.h"
+#include "Phaselink/dialog/sider.h"
+#include "Phaselink/UI/UT/essentialwidget.h"
+#include "Phaselink/UI/UT/acg_tcg_widget.h"
+#include "Phaselink/dialog/addsud_group.h"
 
 // 运动控制
 #include "udpserver.h"
@@ -37,6 +38,9 @@
 #include "colormanager.h"
 #include "debugoutput.h"
 #include "delmiaworker.h"
+#include "ads_poller.h"
+
+class AdsStatusPoller;
 
 enum GATE { GATE_A, GATE_B, GATE_C, GATE_I };
 enum GATE_Sync { Sync_false, Sync_gate_I, Sync_gate_A, Sync_gate_B };
@@ -78,7 +82,8 @@ private:
 
     void initThemeSwitch();                  // 初始化色彩模式
 
-    void update();                           // 实时更新信息
+    void onRobotStatusReady(const AdsStatusPoller::Status &status); // 后台PLC轮询结果刷新UI
+    void update();   // 旧版 UI 刷新（阻塞 ADS 读，已被 AdsStatusPoller 取代，待删除）
 
     void saveParameters();                   // 保存系统参数
 
@@ -128,21 +133,11 @@ private:
 
     void start3DChecker();
 
-    void startCsvWriter();
-
     void onRequestStartDrawing();
 
     void onRequestStopDrawing();
 
-    void openCsvFile();
-
-    void writeCsvHeader();
-
     void updateRobotData(double x, double y, double z, double a, double b, double c);
-
-    void writeCsvData();
-
-    void closeCsvFile();
 
 signals:
     void requestStartDrawing();
@@ -299,13 +294,13 @@ private slots:
 
     void on_pushButton_50_clicked();                      // 龙门位置
 
-    void on_pushButton_51_clicked();
+    void on_pushButton_51_clicked();                      // 清除位置
 
-    void on_comboBox_currentTextChanged(const QString &arg1);
+    void on_comboBox_currentTextChanged(const QString &arg1); // 显示模式切换
 
-    void on_comboBox_2_currentTextChanged(const QString &arg1);
+    void on_comboBox_2_currentTextChanged(const QString &arg1); // 显示任务切换
 
-    void on_doubleSpinBox_8_valueChanged(double arg1);
+    void on_doubleSpinBox_8_valueChanged(double arg1);    // 设置TOF深度
 
 private:
 
@@ -317,6 +312,8 @@ private:
     QThread *m_udpThread = nullptr;
     QThread *m_adsThread = nullptr;
     QThread *m_tcpThread = nullptr;
+    QThread *m_pollThread = nullptr;
+    AdsStatusPoller *m_poller = nullptr;
     bool x_daowei = true;
     bool y_daowei = true;
     bool x_flag = false;
@@ -342,8 +339,6 @@ private:
     bool tcg_enable = false;
     int m_currentBeam = 1;
 
-    Kuka3D::LibKuka3D *m_libKuka3D = nullptr;
-
     // 3D检查相关
     QFuture<void> m_future;
     QAtomicInt m_stopFlag;
@@ -361,17 +356,6 @@ private:
     QThread* m_3dThread;
     QTimer* m_3dTimer;
     bool m_isRunning;
-
-
-    QThread* m_csvThread;
-    QTimer* m_csvTimer;
-
-
-    QFile m_csvFile;
-    QTextStream m_csvStream;
-    bool m_isCsvOpen = false;
-    int m_dataCount = 0;
-    QMutex m_csvMutex;
 
     // 路径仿真
     QThread m_workerThread;

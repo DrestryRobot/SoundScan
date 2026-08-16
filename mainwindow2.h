@@ -4,6 +4,7 @@
 #include <client.h>
 #include <QMainWindow>
 #include <QDockWidget>
+#include <QTranslator>
 #include "datadispatch.h"
 #include <mainwindow1.h>
 #include "ui_mainwindow2.h"

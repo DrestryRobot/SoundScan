@@ -36,9 +36,6 @@ private slots:
 private:
     QUdpSocket *m_udpSocket;
     void parseXmlData(const QByteArray &xmlData);
-
-
-    Kuka3D::LibKuka3D *m_libKuka3D = nullptr;
 };
 
 #endif // UDPSERVER_H

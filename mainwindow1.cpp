@@ -3,6 +3,9 @@
 #include "ui_mainwindow1.h"
 #include "Phaselink/datadispatch.h"
 #include "3dscan/scandata.h"
+#include "ads_poller.h"
+#include <QPointer>
+#include <QProcess>
 
 ads_client adsClient;
 
@@ -112,10 +115,20 @@ MainWindow1::MainWindow1(QWidget *parent)
     kuka = new TcpServer(this);
     kuka->startudp();
 
-    // 启动UI界面的实时更新
-    QTimer *timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &MainWindow1::update);
-    timer->start(100);
+    // PLC 状态轮询移到后台线程，UI 线程只接收结果刷新控件，
+    // 避免每 100ms 在 UI 线程做 20+ 次阻塞式 ADS 同步读导致界面卡顿。
+    m_pollThread = new QThread(this);
+    m_pollThread->setObjectName(QStringLiteral("AdsPollThread"));
+    m_poller = new AdsStatusPoller();
+    m_poller->moveToThread(m_pollThread);
+    qRegisterMetaType<AdsStatusPoller::Status>();
+    connect(m_pollThread, &QThread::finished, m_poller, &QObject::deleteLater);
+    // 显式用 QueuedConnection：连接建立时两者都在主线程，AutoConnection 会误判为直连，
+    // 导致 statusReady 在轮询线程直接调用 UI 槽（跨线程碰控件），界面不刷新。
+    connect(m_poller, &AdsStatusPoller::statusReady, this,
+            &MainWindow1::onRobotStatusReady, Qt::QueuedConnection);
+    connect(m_pollThread, &QThread::started, m_poller, &AdsStatusPoller::start);
+    m_pollThread->start();
 
     // 初始化3DChecker信号
     init3DCheckerSlot();
@@ -145,6 +158,13 @@ MainWindow1::~MainWindow1()
         m_adsThread->quit();
         m_adsThread->wait(3000);
     }
+    if (m_pollThread) {
+        if (m_poller) {
+            QMetaObject::invokeMethod(m_poller, "stop", Qt::BlockingQueuedConnection);
+        }
+        m_pollThread->quit();
+        m_pollThread->wait(3000);
+    }
 
     // 退出系统走 QApplication::quit()，不会触发 closeEvent，
     // 这里统一停止所有子线程，避免 QThread 仍在运行时被父窗口析构
@@ -168,10 +188,6 @@ MainWindow1::~MainWindow1()
         m_isRunning = false;
         m_3dThread->quit();
         m_3dThread->wait(3000);
-    }
-    if (m_csvThread && m_csvThread->isRunning()) {
-        m_csvThread->quit();
-        m_csvThread->wait(3000);
     }
 
     delete ui;
@@ -705,95 +721,68 @@ void MainWindow1::initThemeSwitch() {
     }
 }
 
-// 实时更新信息
-void MainWindow1::update()
+// 后台 PLC 轮询结果刷新 UI（阻塞式 ADS 读取已移到 AdsStatusPoller 线程）
+void MainWindow1::onRobotStatusReady(const AdsStatusPoller::Status &s)
 {
-    // static int lastIs3D = -1;
-    // int currentIs3D = adsClient.getIntVal(0);
+    // 临时诊断：确认 UI 线程收到了轮询结果
+    static bool firstCall = true;
+    if (firstCall) {
+        firstCall = false;
+        qDebug() << "[AdsPoll] UI slot first call, xPos=" << s.xPos << " progNo=" << s.progNo;
+    }
 
-    // if (lastIs3D != -1 && currentIs3D != lastIs3D) {
-    //     lastIs3D = currentIs3D;
-
-    //     m_libKuka3D = Kuka3D::LibKuka3D::getInstance();
-
-    //     bool shouldDraw = !currentIs3D;  // currentIs3D=0时shouldDraw=true
-    //     if (shouldDraw) {
-    //         m_libKuka3D->startDrawing();  // 1→0 时执行
-    //     } else {
-    //         m_libKuka3D->stopDrawing();   // 0→1 时执行
-    //     }
-    // } else {
-    //     lastIs3D = currentIs3D;
-    // }
+    // 值未变化时不刷新控件，减少 UI 重绘
+    auto setLabelText = [](QLabel *label, const QString &text) {
+        if (label->text() != text)
+            label->setText(text);
+    };
 
     // 机器人位姿
-    extern double robot_x,robot_y,robot_z,robot_a,robot_b,robot_c;
-    ui->label_17->setText(QString::number(robot_x, 'f', 0));
-    ui->label_18->setText(QString::number(robot_y, 'f', 0));
-    ui->label_19->setText(QString::number(robot_z, 'f', 0));
-    ui->label_20->setText(QString::number(robot_a, 'f', 0));
-    ui->label_21->setText(QString::number(robot_b, 'f', 0));
-    ui->label_22->setText(QString::number(robot_c, 'f', 0));
+    setLabelText(ui->label_17, QString::number(s.robotX, 'f', 0));
+    setLabelText(ui->label_18, QString::number(s.robotY, 'f', 0));
+    setLabelText(ui->label_19, QString::number(s.robotZ, 'f', 0));
+    setLabelText(ui->label_20, QString::number(s.robotA, 'f', 0));
+    setLabelText(ui->label_21, QString::number(s.robotB, 'f', 0));
+    setLabelText(ui->label_22, QString::number(s.robotC, 'f', 0));
 
     // 龙门状态（使能状态）
-    ui->checkBox->setChecked(adsClient.getIntVal(0x67CE0) != 0); // x 轴使能
-    ui->checkBox_2->setChecked(adsClient.getIntVal(0x67D60) != 0); // y 轴使能
+    if (ui->checkBox->isChecked() != s.xEnable)
+        ui->checkBox->setChecked(s.xEnable);
+    if (ui->checkBox_2->isChecked() != s.yEnable)
+        ui->checkBox_2->setChecked(s.yEnable);
 
     // 龙门状态（实时位置 实时速度）
-    ui->label_37->setText(QString::number(adsClient.getFloatVal(0x67D18), 'f', 0)); // x 轴位置
-    ui->label_39->setText(QString::number(adsClient.getFloatVal(0x67D1C), 'f', 0)); // x 轴速度
-    if(!ui->label_39->text().toDouble()) ui->label_39->setText("0");
-    ui->label_38->setText(QString::number(adsClient.getFloatVal(0x67D98), 'f', 0)); // y 轴位置
-    ui->label_40->setText(QString::number(adsClient.getFloatVal(0x67D9C), 'f', 0)); // y 轴速度
-    if(!ui->label_40->text().toDouble()) ui->label_40->setText("0");
-
-    longmen[0] = adsClient.getFloatVal(0x67D18);
-    longmen[1] = adsClient.getFloatVal(0x67D98);
+    setLabelText(ui->label_37, QString::number(s.xPos, 'f', 0));
+    QString xVelText = QString::number(s.xVel, 'f', 0);
+    if (!xVelText.toDouble())
+        xVelText = "0";
+    setLabelText(ui->label_39, xVelText);
+    setLabelText(ui->label_38, QString::number(s.yPos, 'f', 0));
+    QString yVelText = QString::number(s.yVel, 'f', 0);
+    if (!yVelText.toDouble())
+        yVelText = "0";
+    setLabelText(ui->label_40, yVelText);
 
     // 龙门运行到位
-    if (adsClient.getBoolVal(0x5EBDE) || adsClient.getBoolVal(0x5EBDD) || adsClient.getBoolVal(0x5EBDB) || adsClient.getBoolVal(0x5EBDC) || x_flag)  // MotorStatusVary[0].bMoveAbsolute || MotorStatusVary[0].bMoveRelative || (MotorControlVary[2].bJogForwards && MotorControlVary[0].bJogBackwards)
-    {
-        x_daowei = false;
-    }
-    else
-    {
-        x_daowei = true;
-    }
-    if (adsClient.getBoolVal(0x5EC2E) || adsClient.getBoolVal(0x5EC2D) || adsClient.getBoolVal(0x5EC2B) || adsClient.getBoolVal(0x5EC2C) || y_flag)  // MotorStatusVary[2].bMoveAbsolute || MotorStatusVary[2].bMoveRelative || (MotorControlVary[2].bJogForwards && MotorControlVary[2].bJogBackwards)
-    {
-        y_daowei = false;
-    }
-    else
-    {
-        y_daowei = true;
-    }
-    ui->checkBox_3->setChecked(x_daowei);
-    ui->checkBox_4->setChecked(y_daowei);
+    x_daowei = !(s.xMove1 || s.xMove2 || s.xMove3 || s.xMove4 || x_flag);
+    y_daowei = !(s.yMove1 || s.yMove2 || s.yMove3 || s.yMove4 || y_flag);
+    if (ui->checkBox_3->isChecked() != x_daowei)
+        ui->checkBox_3->setChecked(x_daowei);
+    if (ui->checkBox_4->isChecked() != y_daowei)
+        ui->checkBox_4->setChecked(y_daowei);
 
     // 当前程序号
-    ui->label_12->setText(QString::number(adsClient.getIntVal(0x5EB08)));
-    if (adsClient.getIntVal(1))
-    {
-        adsClient.setIntVal(1, 0);
-    }
+    setLabelText(ui->label_12, QString::number(s.progNo));
 
     // 机器人模式
-    if (adsClient.getIntVal(0x5EB0F))
-    {
-        ui->label_13->setText("T1");
-    }
-    if (adsClient.getIntVal(0x5EB90))
-    {
-        ui->label_13->setText("T2");
-    }
-    if (adsClient.getIntVal(0x5EB91))
-    {
-        ui->label_13->setText("AUT");
-    }
-    if (adsClient.getIntVal(0x5EB92))
-    {
-        ui->label_13->setText("EXT");
-    }
+    if (s.modeT1)
+        setLabelText(ui->label_13, "T1");
+    if (s.modeT2)
+        setLabelText(ui->label_13, "T2");
+    if (s.modeAUT)
+        setLabelText(ui->label_13, "AUT");
+    if (s.modeEXT)
+        setLabelText(ui->label_13, "EXT");
 }
 
 // 保存系统参数
@@ -2001,31 +1990,6 @@ void MainWindow1::start3DChecker()
     m_3dThread->start();
 }
 
-void MainWindow1::startCsvWriter()
-{
-    qDebug() << "[CSV] startCsvWriter 进入";
-    m_csvThread = new QThread(this);
-    m_csvTimer = new QTimer();
-    m_csvTimer->moveToThread(m_csvThread);
-
-    connect(m_csvThread, &QThread::started, [=]() {
-        m_csvTimer->setInterval(2);
-        connect(m_csvTimer, &QTimer::timeout, [=]() {
-            if (m_isRunning && m_isCsvOpen) {
-                writeCsvData();
-            }
-        });
-        m_csvTimer->start();
-    });
-
-    connect(m_csvThread, &QThread::finished, m_csvTimer, &QTimer::deleteLater);
-    // 同上：不要连接 QThread 自身 deleteLater。
-
-    qDebug() << "[CSV] 准备启动 CSV 线程";
-    m_csvThread->start();
-    qDebug() << "[CSV] CSV 线程已启动";
-}
-
 void MainWindow1::onRequestStartDrawing()
 {
     qDebug() << "[3DChecker] onRequestStartDrawing 进入:"
@@ -2039,10 +2003,6 @@ void MainWindow1::onRequestStartDrawing()
         return;
     }
 
-    // m_libKuka3D = Kuka3D::LibKuka3D::getInstance();
-
-    // m_libKuka3D->startDrawing();
-
     // 机器人开始扫板信号已到达：触发 3dscan 开始绘制
     if (m_scanStartPending) {
         m_scanStartPending = false;
@@ -2053,11 +2013,6 @@ void MainWindow1::onRequestStartDrawing()
         }
         qDebug() << "[3DChecker] startDrawing 调用完成";
     }
-
-    // 打开CSV文件
-    openCsvFile();
-
-    startCsvWriter();
 
     m_start = true;
 
@@ -2073,263 +2028,12 @@ void MainWindow1::onRequestStopDrawing()
         return;
     }
 
-    // m_libKuka3D = Kuka3D::LibKuka3D::getInstance();
-
-    // m_libKuka3D->stopDrawing();
-
-    // 关闭CSV文件
-    closeCsvFile();
-
     m_start = false;
 
     // 扫描结束
     MainWindow1::on_pushButton_20_clicked();
 
     qDebug() << "[3DChecker] 停止绘制: robot_ipoc=" << robot_ipoc;
-}
-
-void MainWindow1::openCsvFile()
-{
-    if (m_isCsvOpen) return;
-
-    qDebug() << "[CSV] openCsvFile 进入（加锁前）";
-    QMutexLocker locker(&m_csvMutex);
-    qDebug() << "[CSV] openCsvFile 已加锁";
-
-    QString saveDir = "C:/超声扫描/报告";
-    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
-    QString fileName = QString("scan_%1.csv").arg(timestamp);
-    QString fullPath = saveDir + "/" + fileName;
-
-    m_csvFile.setFileName(fullPath);
-    qDebug() << "[CSV] 准备打开:" << fullPath;
-
-    if (m_csvFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        m_csvStream.setDevice(&m_csvFile);
-        writeCsvHeader();
-        m_isCsvOpen = true;
-        m_dataCount = 0;
-        qDebug() << "CSV文件已创建:" << fullPath;
-    } else {
-        qDebug() << "无法创建CSV文件:" << fullPath;
-    }
-    qDebug() << "[CSV] openCsvFile 结束";
-}
-
-void MainWindow1::writeCsvHeader()
-{
-    m_csvStream << "X,Y,Z,A,B,C,SI,";
-
-    for (int i = 1; i <= beam; i++) {
-        m_csvStream << QString("AMP_%1,TOF_%1,").arg(i);
-    }
-
-    m_csvStream << "BEAM,LX,LY";
-
-    m_csvStream << "\n";
-}
-
-// void MainWindow1::writeCsvData()
-// {
-//     QMutexLocker locker(&m_csvMutex);
-
-//     static int lastIpoc = -1;
-//     int currentIpoc = robot_ipoc;
-//     int ipocDelta = currentIpoc - lastIpoc;
-
-//     // 检查IPOC是否变化
-//     if (currentIpoc == lastIpoc) return;
-
-//     // 检查IPOC是否连续
-//     if (lastIpoc != -1 && ipocDelta > 4) {
-//         int lostFrames = (ipocDelta / 4) - 1;
-//         qDebug() << "[IPOC不连续] 上次:" << lastIpoc
-//                  << "当前:" << currentIpoc
-//                  << "差值:" << ipocDelta
-//                  << "丢失" << lostFrames << "帧"
-//                  << "行号:" << m_dataCount;
-//     }
-
-//     m_dataCount++;
-
-//     m_csvStream << QString::number(robot_x, 'f', 6) << ","
-//                 << QString::number(robot_y, 'f', 6) << ","
-//                 << QString::number(robot_z, 'f', 6) << ","
-//                 << QString::number(robot_a, 'f', 6) << ","
-//                 << QString::number(robot_b, 'f', 6) << ","
-//                 << QString::number(robot_c, 'f', 6) << "\n";
-
-//     lastIpoc = currentIpoc;
-// }
-
-void MainWindow1::writeCsvData()
-{
-    QMutexLocker locker(&m_csvMutex);
-
-    static int lastIpoc = -1;
-    int currentIpoc = robot_ipoc;
-    int ipocDelta = currentIpoc - lastIpoc;
-
-    // 检查IPOC是否变化
-    if (currentIpoc == lastIpoc) return;
-
-    // 检查IPOC是否连续
-    if (lastIpoc != -1 && ipocDelta > 4) {
-        int lostFrames = (ipocDelta / 4) - 1;
-        qDebug() << "[IPOC不连续] 上次:" << lastIpoc
-                 << "当前:" << currentIpoc
-                 << "差值:" << ipocDelta
-                 << "丢失" << lostFrames << "帧"
-                 << "行号:" << m_dataCount;
-    }
-
-    // double pose[6] = {0.0};
-    // double longmen[2] = {0.0};
-
-    // pose[0] = robot_x;
-    // pose[1] = robot_y;
-    // pose[2] = robot_z;
-    // pose[3] = robot_a;
-    // pose[4] = robot_b;
-    // pose[5] = robot_c;
-    // longmen[0] = adsClient.getFloatVal(0x67D18);
-    // longmen[1] = adsClient.getFloatVal(0x67D98);
-
-    // mainWindow3->Drawing(pose, amp, tof, si, beam, longmen);
-
-
-    static int frameCount = 0;
-    static QElapsedTimer timer;
-
-    frameCount++;
-
-    if (!timer.isValid()) {
-        timer.start();
-    }
-
-    // 每10秒打印一次帧数
-    if (timer.elapsed() >= 10000) {
-        qDebug() << QString("[10s统计] 帧数: %1, 频率: %2 Hz, 总帧数: %3")
-                        .arg(frameCount)
-                        .arg(frameCount / 10.0, 0, 'f', 1)
-                        .arg(frameCount);
-        timer.restart();
-        frameCount = 0;
-    }
-
-    m_dataCount++;
-
-    // ============================================================
-    // 🔥 写入机器人位姿
-    // ============================================================
-    m_csvStream << QString::number(robot_x, 'f', 6) << ","
-                << QString::number(robot_y, 'f', 6) << ","
-                << QString::number(robot_z, 'f', 6) << ","
-                << QString::number(robot_a, 'f', 6) << ","
-                << QString::number(robot_b, 'f', 6) << ","
-                << QString::number(robot_c, 'f', 6) << ","
-                << QString::number(si, 'f', 6)      << ",";
-
-    // ============================================================
-    // 🔥 写入 SI
-    // ============================================================
-    // m_csvStream << QString::number(si, 'f', 6) << ",";
-
-    // ============================================================
-    // 🔥 写入 AMP 和 TOF
-    // ============================================================
-    for (int i = 0; i < beam && i < 64; i++) {
-        m_csvStream << QString::number(amp[i], 'f', 6) << ","
-                    << QString::number(tof[i], 'f', 6) << ",";
-    }
-
-    // ============================================================
-    // 🔥 只有第一行才写入 BEAM, LX, LY
-    // ============================================================
-    if (m_dataCount == 1) {
-        m_csvStream << beam << ","
-                    << QString::number(adsClient.getFloatVal(0x67D18), 'f', 6) << ","
-                    << QString::number(adsClient.getFloatVal(0x67D98), 'f', 6);
-    } else {
-        // 非第一行：用空值占位（保持列数一致）
-        m_csvStream << "," << "," << ",";
-    }
-
-    m_csvStream << "\n";
-
-    lastIpoc = currentIpoc;
-
-    // 每1000行异步flush
-    if (m_dataCount % 1000 == 0) {
-        QtConcurrent::run([this]() {
-            QMutexLocker locker(&m_csvMutex);
-            m_csvStream.flush();
-        });
-    }
-}
-
-// void MainWindow1::writeCsvData()
-// {
-//     QMutexLocker locker(&m_csvMutex);
-
-//     m_dataCount++;
-
-//     if(m_dataCount == 1)
-//     {
-//         m_csvStream << QString::number(robot_x, 'f', 6) << ","
-//                     << QString::number(robot_y, 'f', 6) << ","
-//                     << QString::number(robot_z, 'f', 6) << ","
-//                     << QString::number(robot_a, 'f', 6) << ","
-//                     << QString::number(robot_b, 'f', 6) << ","
-//                     << QString::number(robot_c, 'f', 6) << ","
-//                     << QString::number(si     , 'f', 6) << ",";
-//     }
-//     else
-//     {
-//         m_csvStream << QString::number(robot_x, 'f', 6) << ","
-//                     << QString::number(robot_y, 'f', 6) << ","
-//                     << QString::number(robot_z, 'f', 6) << ","
-//                     << QString::number(robot_a, 'f', 6) << ","
-//                     << QString::number(robot_b, 'f', 6) << ","
-//                     << QString::number(robot_c, 'f', 6) << ","
-//                     << QString::number(si     , 'f', 6) << ",";
-//     }
-
-//     for (int i = 0; i < beam; i++) {
-//         m_csvStream << QString::number(amp[i], 'f', 6) << ","
-//                     << QString::number(tof[i], 'f', 6) << ",";
-//     }
-
-//     if(m_dataCount == 1)
-//     {
-//         m_csvStream << beam << ","
-//                     << QString::number(adsClient.getFloatVal(0x67D18), 'f', 6) << ","
-//                     << QString::number(adsClient.getFloatVal(0x67D98), 'f', 6) << ",";
-//     }
-//     else
-//     {
-//         m_csvStream << ","
-//                     << ","
-//                     << ",";
-//     }
-
-//     m_csvStream << "\n";
-
-//     if (m_dataCount % 100 == 0) {
-//         m_csvStream.flush();
-//         qDebug() << "已写入" << m_dataCount << "行数据";
-//     }
-// }
-
-void MainWindow1::closeCsvFile()
-{
-    if (!m_isCsvOpen) return;
-
-    QMutexLocker locker(&m_csvMutex);
-    m_csvStream.flush();
-    m_csvFile.close();
-    m_isCsvOpen = false;
-    qDebug() << "CSV文件已关闭，共写入" << m_dataCount << "行";
 }
 
 // 打开文件
@@ -2962,13 +2666,6 @@ void MainWindow1::on_pushButton_19()
 void MainWindow1::on_pushButton_20_clicked()
 {
     MainWindow1::on_pushButton_20();
-
-    m_libKuka3D = Kuka3D::LibKuka3D::getInstance();
-
-    m_libKuka3D->stopDrawing();
-
-    // 关闭CSV文件
-    closeCsvFile();
 }
 
 // 扫描结束（外部调用）
