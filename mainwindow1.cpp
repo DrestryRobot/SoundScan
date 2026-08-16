@@ -1,8 +1,8 @@
 #include "mainwindow1.h"
 #include "mainwindow2.h"
 #include "ui_mainwindow1.h"
-#include "datadispatch.h"
-#include "3DScan/scandata.h"
+#include "Phaselink/datadispatch.h"
+#include "3dscan/scandata.h"
 
 ads_client adsClient;
 
@@ -145,6 +145,35 @@ MainWindow1::~MainWindow1()
         m_adsThread->quit();
         m_adsThread->wait(3000);
     }
+
+    // 退出系统走 QApplication::quit()，不会触发 closeEvent，
+    // 这里统一停止所有子线程，避免 QThread 仍在运行时被父窗口析构
+    // 触发 Qt 的 qFatal(abort)（0xC0000409 / Fatal program exit requested）。
+    if (m_workerThread.isRunning()) {
+        m_workerThread.quit();
+        m_workerThread.wait(3000);
+    }
+    if (m_udpThread && m_udpThread->isRunning()) {
+        if (server) {
+            QMetaObject::invokeMethod(server, "stop", Qt::BlockingQueuedConnection);
+        }
+        m_udpThread->quit();
+        m_udpThread->wait(3000);
+    }
+    if (m_processorThread && m_processorThread->isRunning()) {
+        m_processorThread->quit();
+        m_processorThread->wait(3000);
+    }
+    if (m_3dThread && m_3dThread->isRunning()) {
+        m_isRunning = false;
+        m_3dThread->quit();
+        m_3dThread->wait(3000);
+    }
+    if (m_csvThread && m_csvThread->isRunning()) {
+        m_csvThread->quit();
+        m_csvThread->wait(3000);
+    }
+
     delete ui;
 }
 
@@ -1965,7 +1994,9 @@ void MainWindow1::start3DChecker()
     });
 
     connect(m_3dThread, &QThread::finished, m_3dTimer, &QTimer::deleteLater);
-    connect(m_3dThread, &QThread::finished, m_3dThread, &QThread::deleteLater);
+    // 注意：不要连接 QThread 自身 deleteLater，否则线程一停对象就被删，
+    // 成员指针悬垂，窗口析构时访问会触发 0xC0000005。
+    // 线程对象作为窗口子对象，统一由 MainWindow1 析构清理。
 
     m_3dThread->start();
 }
@@ -1988,7 +2019,7 @@ void MainWindow1::startCsvWriter()
     });
 
     connect(m_csvThread, &QThread::finished, m_csvTimer, &QTimer::deleteLater);
-    connect(m_csvThread, &QThread::finished, m_csvThread, &QThread::deleteLater);
+    // 同上：不要连接 QThread 自身 deleteLater。
 
     qDebug() << "[CSV] 准备启动 CSV 线程";
     m_csvThread->start();
@@ -2012,7 +2043,7 @@ void MainWindow1::onRequestStartDrawing()
 
     // m_libKuka3D->startDrawing();
 
-    // 机器人开始扫板信号已到达：触发 3DScan 开始绘制
+    // 机器人开始扫板信号已到达：触发 3dscan 开始绘制
     if (m_scanStartPending) {
         m_scanStartPending = false;
         if (MainWindow2::s_instance) {
@@ -2885,6 +2916,12 @@ void MainWindow1::on_pushButton_9_clicked()
 // 扫描开始（外部调用）
 void MainWindow1::on_pushButton_9()
 {
+    const bool simStarted = m_simulator && !m_simulator->isRunning();
+    if (simStarted) {
+        qDebug() << "[AutoSim] scan-start clicked; starting simulation";
+        m_simulator->start();
+    }
+
     MainWindow1::on_pushButton_28_clicked(); // 龙门电机失能
 
     adsClient.setIntVal(0x5EB08, ui->comboBox_2->currentIndex()+1);
@@ -2893,8 +2930,16 @@ void MainWindow1::on_pushButton_9()
     {
         scan_continue_flag = false;
         adsClient.setIntVal(0x5E256, 1);
-        // 不立即开始绘制：等“机器人开始扫板”信号（PLC 变量0 跳变）到达后再触发
+        // 不立即开始绘制：等"机器人开始扫板"信号（PLC 变量0 跳变）到达后再触发
         m_scanStartPending = true;
+    }
+    // 模拟数据源已启动：没有 PLC 机器人信号链路，直接开始 3D 绘制
+    if (simStarted) {
+        if (MainWindow2::s_instance) {
+            MainWindow3 *mw3 = MainWindow2::s_instance->getMainWindow3();
+            if (mw3)
+                mw3->startDrawing();
+        }
     }
     // 调试：打印扫描开始写入/读回的 PLC 值
     qDebug() << "[ScanCtrl] 扫描开始: 0x5EB08=" << adsClient.getIntVal(0x5EB08)
@@ -2916,7 +2961,7 @@ void MainWindow1::on_pushButton_19()
     adsClient.setIntVal(0x5E256, 8);
     m_scanStartPending = false;
 
-    // 链接 3DScan：停止绘制（暂停，可继续）
+    // 链接 3dscan：停止绘制（暂停，可继续）
     if (MainWindow2::s_instance) {
         MainWindow3 *mw3 = MainWindow2::s_instance->getMainWindow3();
         if (mw3)
@@ -2948,7 +2993,7 @@ void MainWindow1::on_pushButton_20()
     adsClient.setIntVal(0x5EB08, 0);
     m_scanStartPending = false;
 
-    // 链接 3DScan：结束绘制
+    // 链接 3dscan：结束绘制
     if (MainWindow2::s_instance) {
         MainWindow3 *mw3 = MainWindow2::s_instance->getMainWindow3();
         if (mw3)
@@ -4575,22 +4620,6 @@ void MainWindow1::on_comboBox_2_currentTextChanged(const QString &arg1)
 {
     qDebug() << "切换到" << ui->comboBox_2->currentText();
 }
-
-void MainWindow1::on_pushButton_7_clicked()
-{
-    m_libKuka3D = Kuka3D::LibKuka3D::getInstance();
-
-    m_libKuka3D->startDrawing();
-}
-
-
-void MainWindow1::on_pushButton_36_clicked()
-{
-    m_libKuka3D = Kuka3D::LibKuka3D::getInstance();
-
-    m_libKuka3D->stopDrawing();
-}
-
 
 void MainWindow1::on_doubleSpinBox_8_valueChanged(double arg1)
 {

@@ -37,6 +37,7 @@
 #include "colormanager.h"
 #include "debugoutput.h"
 #include "delmiaworker.h"
+#include "simulation/SimDataPlayer.h"
 
 enum GATE { GATE_A, GATE_B, GATE_C, GATE_I };
 enum GATE_Sync { Sync_false, Sync_gate_I, Sync_gate_A, Sync_gate_B };
@@ -56,6 +57,8 @@ public:
     MainWindow1(QWidget *parent = nullptr);
 
     ~MainWindow1();
+
+    void setSimulationPlayer(SimDataPlayer *player) { m_simulator = player; }
 
     void on_pushButton_9();                  // 扫描开始（外部调用）
 
@@ -305,15 +308,12 @@ private slots:
 
     void on_comboBox_2_currentTextChanged(const QString &arg1);
 
-    void on_pushButton_7_clicked();
-
-    void on_pushButton_36_clicked();
-
     void on_doubleSpinBox_8_valueChanged(double arg1);
 
 private:
 
     Ui::MainWindow1 *ui;
+    SimDataPlayer *m_simulator = nullptr;
     
     // 运动控制
     UdpServer* server;
@@ -326,7 +326,7 @@ private:
     bool x_flag = false;
     bool y_flag = false;
     bool scan_continue_flag = true;
-    // 扫描开始后等待“机器人开始扫板”信号，信号到达才触发 3DScan 开始绘制
+    // 扫描开始后等待“机器人开始扫板”信号，信号到达才触发 3dscan 开始绘制
     bool m_scanStartPending = false;
 
     // 电机失能检测

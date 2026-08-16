@@ -50,8 +50,16 @@ MainWindow2::~MainWindow2()
 {
     DataDispatch::removeProcessor(m_dataProcessor);
     DataDispatch::removeDirectSink(m_directSink);
-    m_3dThread->quit();
-    m_3dThread->wait();
+    // 退出系统走 QApplication::quit()，不会触发 closeEvent，
+    // 统一停止子线程，避免 QThread 仍在运行时被父窗口析构触发 qFatal(abort)。
+    if (m_processorThread && m_processorThread->isRunning()) {
+        m_processorThread->quit();
+        m_processorThread->wait(3000);
+    }
+    if (m_3dThread && m_3dThread->isRunning()) {
+        m_3dThread->quit();
+        m_3dThread->wait(3000);
+    }
     delete ui;
 }
 

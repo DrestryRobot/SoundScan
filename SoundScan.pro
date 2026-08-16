@@ -3,6 +3,7 @@ QT       += core gui network charts widgets xml
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets axcontainer opengl openglwidgets
 
 CONFIG += c++17
+CONFIG += force_debug_info
 
 # Prevent Windows min/max macros from breaking std::min/std::max
 DEFINES += NOMINMAX
@@ -12,9 +13,9 @@ DEFINES += NOMINMAX
 # when the build directory is too deep for relative paths.
 QMAKE_PROJECT_DEPTH = 0
 
-# Shared NDT code is owned by the phaselink_code subproject (same as 3DScan:
+# Shared NDT code lives in the Phaselink subproject (same as 3dscan:
 # sources below are compiled from that folder via relative paths).
-INCLUDEPATH += $$PWD/phaselink_code
+INCLUDEPATH += $$PWD/Phaselink
 
 # TwinCAT ADS (Beckhoff)
 INCLUDEPATH += "C:\TwinCAT\AdsApi\TcAdsDll\Include"
@@ -66,10 +67,10 @@ LIBS += -lvtkGUISupportQt-9.6 \
         -lvtkViewsQt-9.6 \
         -lvtksys-9.6
 
-# ============ CUDA (3DScan/algorithm.cu) ============
+# ============ CUDA (3dscan/algorithm.cu) ============
 CUDA_DIR = C:/CUDA/v13.3
 CUDA_ARCH = sm_86
-INCLUDEPATH += $$PWD $$PWD/3DScan $$CUDA_DIR/include $$CUDA_DIR/common/inc
+INCLUDEPATH += $$PWD $$PWD/3dscan $$CUDA_DIR/include $$CUDA_DIR/common/inc
 QMAKE_LIBDIR += $$CUDA_DIR/lib/x64
 LIBS += -lcudart -lcublas -lcufft
 CONFIG(debug, debug|release) {
@@ -79,129 +80,129 @@ CONFIG(debug, debug|release) {
 }
 # Compile algorithm.cu with nvcc before linking (works for any build dir).
 cuda_prebuild.target = $$OUT_PWD/algorithm.obj
-cuda_prebuild.commands = cmd /c "\"$$CUDA_DIR/bin/nvcc.exe --machine 64 -arch=$$CUDA_ARCH -c -o $$OUT_PWD/algorithm.obj $$PWD/3DScan/algorithm.cu -Xcompiler $$CUDA_XCOMPILER\""
-cuda_prebuild.depends = $$PWD/3DScan/algorithm.cu $$PWD/3DScan/algorithm.h
+cuda_prebuild.commands = cmd /c "\"$$CUDA_DIR/bin/nvcc.exe --machine 64 -arch=$$CUDA_ARCH -c -o $$OUT_PWD/algorithm.obj $$PWD/3dscan/algorithm.cu -Xcompiler $$CUDA_XCOMPILER\""
+cuda_prebuild.depends = $$PWD/3dscan/algorithm.cu $$PWD/3dscan/algorithm.h
 QMAKE_EXTRA_TARGETS += cuda_prebuild
 PRE_TARGETDEPS += $$OUT_PWD/algorithm.obj
 OBJECTS += $$OUT_PWD/algorithm.obj
-OTHER_FILES += $$PWD/3DScan/algorithm.cu
+OTHER_FILES += $$PWD/3dscan/algorithm.cu
 
 # SoundScan-only sources
 SOURCES += \
     ads_client.cpp \
     ads_read_thread.cpp \
     colormanager.cpp \
-    phaselink_code/datadispatch.cpp \
+    Phaselink/datadispatch.cpp \
     debugoutput.cpp \
-    delmia.cpp \
     delmiaworker.cpp \
-    phaselink_code/dialog/viewmodel.cpp \
+    Phaselink/dialog/viewmodel.cpp \
     main.cpp \
     mainwindow1.cpp \
-    phaselink_code/mainwindow.cpp \
+    Phaselink/mainwindow.cpp \
     mainwindow2.cpp \
-    3DScan/mainwindow3.cpp \
-    3DScan/scandata.cpp \
-    3DScan/scan.cpp \
-    3DScan/vtkvboactor.cpp \
+    3dscan/mainwindow3.cpp \
+    3dscan/datapanel.cpp \
+    3dscan/scandata.cpp \
+    3dscan/scan.cpp \
+    3dscan/vtkvboactor.cpp \
     tcpserver.cpp \
     udpserver.cpp
 
-# Shared code compiled from phaselink_code (subproject, like 3DScan)
+# Shared code compiled from Phaselink (subproject, like 3dscan)
 SOURCES += \
-    phaselink_code/app.cpp \
-    phaselink_code/ndtbase.cpp \
-    phaselink_code/UI/scanning.cpp \
-    phaselink_code/UI/UT/acg_tcg_widget.cpp \
-    phaselink_code/UI/UT/essentialwidget.cpp \
-    phaselink_code/UI/UT/gate_widget.cpp \
-    phaselink_code/UI/UT/phase_array.cpp \
-    phaselink_code/UI/UT/ut_widget.cpp \
-    phaselink_code/dialog/addsud_group.cpp \
-    phaselink_code/dialog/amplitudpalette.cpp \
-    phaselink_code/dialog/axis_utils.cpp \
-    phaselink_code/dialog/colordialog.cpp \
-    phaselink_code/dialog/dataprocessor.cpp \
-    phaselink_code/dialog/listwidget.cpp \
-    phaselink_code/dialog/measurewidget.cpp \
-    phaselink_code/dialog/packetdatasaver.cpp \
-    phaselink_code/dialog/parammanager.cpp \
-    phaselink_code/dialog/rulerwidget.cpp \
-    phaselink_code/dialog/sider.cpp \
-    phaselink_code/dialog/viewwidget.cpp \
-    phaselink_code/dialog/viewworker.cpp
+    Phaselink/app.cpp \
+    Phaselink/ndtbase.cpp \
+    Phaselink/UI/scanning.cpp \
+    Phaselink/UI/UT/acg_tcg_widget.cpp \
+    Phaselink/UI/UT/essentialwidget.cpp \
+    Phaselink/UI/UT/gate_widget.cpp \
+    Phaselink/UI/UT/phase_array.cpp \
+    Phaselink/UI/UT/ut_widget.cpp \
+    Phaselink/dialog/addsud_group.cpp \
+    Phaselink/dialog/amplitudpalette.cpp \
+    Phaselink/dialog/axis_utils.cpp \
+    Phaselink/dialog/colordialog.cpp \
+    Phaselink/dialog/dataprocessor.cpp \
+    Phaselink/dialog/listwidget.cpp \
+    Phaselink/dialog/measurewidget.cpp \
+    Phaselink/dialog/packetdatasaver.cpp \
+    Phaselink/dialog/parammanager.cpp \
+    Phaselink/dialog/rulerwidget.cpp \
+    Phaselink/dialog/sider.cpp \
+    Phaselink/dialog/viewwidget.cpp \
+    Phaselink/dialog/viewworker.cpp
 
 SOURCES += \
-    $$PWD/phaselink_code/simulation/SimDataPlayer.cpp
+    $$PWD/Phaselink/simulation/SimDataPlayer.cpp
 
 HEADERS += \
     ads_client.h \
     ads_read_thread.h \
     colormanager.h \
     debugoutput.h \
-    delmia.h \
     delmiaworker.h \
-    phaselink_code/dialog/viewmodel.h \
-    3DScan/scandata.h \
-    phaselink_code/datadispatch.h \
+    Phaselink/dialog/viewmodel.h \
+    3dscan/scandata.h \
+    Phaselink/datadispatch.h \
     mainwindow1.h \
-    phaselink_code/mainwindow.h \
+    Phaselink/mainwindow.h \
     mainwindow2.h \
-    3DScan/mainwindow3.h \
-    3DScan/scan.h \
-    3DScan/algorithm.h \
-    3DScan/vtkvboactor.h \
+    3dscan/mainwindow3.h \
+    3dscan/datapanel.h \
+    3dscan/scan.h \
+    3dscan/algorithm.h \
+    3dscan/vtkvboactor.h \
     tcpserver.h \
     udpserver.h
 
 HEADERS += \
-    phaselink_code/app.h \
-    phaselink_code/ndtbase.h \
-    phaselink_code/UI/scanning.h \
-    phaselink_code/UI/UT/acg_tcg_widget.h \
-    phaselink_code/UI/UT/essentialwidget.h \
-    phaselink_code/UI/UT/gate_widget.h \
-    phaselink_code/UI/UT/phase_array.h \
-    phaselink_code/UI/UT/ut_widget.h \
-    phaselink_code/dialog/adddeviceDialog.h \
-    phaselink_code/dialog/addsud_group.h \
-    phaselink_code/dialog/amplitudpalette.h \
-    phaselink_code/dialog/axis_utils.h \
-    phaselink_code/dialog/colordialog.h \
-    phaselink_code/dialog/dataprocessor.h \
-    phaselink_code/dialog/listwidget.h \
-    phaselink_code/dialog/measurewidget.h \
-    phaselink_code/dialog/packetdatasaver.h \
-    phaselink_code/dialog/parammanager.h \
-    phaselink_code/dialog/rulerwidget.h \
-    phaselink_code/dialog/sider.h \
-    phaselink_code/dialog/viewwidget.h \
-    phaselink_code/dialog/viewworker.h
+    Phaselink/app.h \
+    Phaselink/ndtbase.h \
+    Phaselink/UI/scanning.h \
+    Phaselink/UI/UT/acg_tcg_widget.h \
+    Phaselink/UI/UT/essentialwidget.h \
+    Phaselink/UI/UT/gate_widget.h \
+    Phaselink/UI/UT/phase_array.h \
+    Phaselink/UI/UT/ut_widget.h \
+    Phaselink/dialog/adddeviceDialog.h \
+    Phaselink/dialog/addsud_group.h \
+    Phaselink/dialog/amplitudpalette.h \
+    Phaselink/dialog/axis_utils.h \
+    Phaselink/dialog/colordialog.h \
+    Phaselink/dialog/dataprocessor.h \
+    Phaselink/dialog/listwidget.h \
+    Phaselink/dialog/measurewidget.h \
+    Phaselink/dialog/packetdatasaver.h \
+    Phaselink/dialog/parammanager.h \
+    Phaselink/dialog/rulerwidget.h \
+    Phaselink/dialog/sider.h \
+    Phaselink/dialog/viewwidget.h \
+    Phaselink/dialog/viewworker.h
 
 HEADERS += \
-    $$PWD/phaselink_code/simulation/SimDataPlayer.h
+    $$PWD/Phaselink/simulation/SimDataPlayer.h
 
 FORMS += \
-    phaselink_code/UI/scanning.ui \
-    phaselink_code/UI/UT/acg_tcg_widget.ui \
-    phaselink_code/UI/UT/essentialwidget.ui \
-    phaselink_code/UI/UT/gate_widget.ui \
-    phaselink_code/UI/UT/phase_array.ui \
-    phaselink_code/UI/UT/ut_widget.ui \
-    phaselink_code/dialog/addsud_group.ui \
-    phaselink_code/dialog/amplitudpalette.ui \
-    phaselink_code/dialog/colordialog.ui \
-    phaselink_code/dialog/measurewidget.ui \
-    phaselink_code/dialog/rulerwidget.ui \
-    phaselink_code/dialog/sider.ui \
-    phaselink_code/dialog/viewwidget.ui \
+    Phaselink/UI/scanning.ui \
+    Phaselink/UI/UT/acg_tcg_widget.ui \
+    Phaselink/UI/UT/essentialwidget.ui \
+    Phaselink/UI/UT/gate_widget.ui \
+    Phaselink/UI/UT/phase_array.ui \
+    Phaselink/UI/UT/ut_widget.ui \
+    Phaselink/dialog/addsud_group.ui \
+    Phaselink/dialog/amplitudpalette.ui \
+    Phaselink/dialog/colordialog.ui \
+    Phaselink/dialog/measurewidget.ui \
+    Phaselink/dialog/rulerwidget.ui \
+    Phaselink/dialog/sider.ui \
+    Phaselink/dialog/viewwidget.ui \
     mainwindow1.ui \
-    phaselink_code/mainwindow.ui \
+    Phaselink/mainwindow.ui \
     mainwindow2.ui \
-    3DScan/mainwindow3.ui
+    3dscan/mainwindow3.ui
 
 RESOURCES += resources.qrc \
-    phaselink_code/Qss.qrc
+    Phaselink/Qss.qrc
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

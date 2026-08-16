@@ -1,18 +1,24 @@
 #include "mainwindow1.h"
-#include "phaselink_code/mainwindow.h"
+#include "Phaselink/mainwindow.h"
 #include "mainwindow2.h"
 #include <windows.h>
 #include <algorithm>
 #include <QApplication>
 #include <QByteArray>
+#include <QCoreApplication>
 #include <QFile>
+#include <QCommandLineOption>
+#include <QCommandLineParser>
 #include <QPushButton>
 #include <QDebug>
+#include <QTemporaryFile>
 #include <QTimer>
 #include <QTranslator>
 #include <QSurfaceFormat>
 #include <QSplashScreen>
 #include <QString>
+#include <QTextStream>
+#include <QtMath>
 #include <vtkObject.h>
 #include <vtkOutputWindow.h>
 
@@ -36,6 +42,13 @@ int main(int argc, char *argv[])
     }
 
     QApplication a(argc, argv);
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("SoundScan");
+    parser.addHelpOption();
+    parser.addOption(QCommandLineOption("simulate-test",
+                                        "Run a short built-in simulation and exit when it finishes."));
+    parser.process(a);
 
     // 禁止 VTK 弹出独立输出窗口（错误/警告信息不再弹窗）
     vtkObject::GlobalWarningDisplayOff();
@@ -75,7 +88,7 @@ int main(int argc, char *argv[])
             w3.raise();
             w3.activateWindow();
         } else {
-            w3.show();
+            w3.showFullScreen();
         }
     });
 
@@ -101,13 +114,39 @@ int main(int argc, char *argv[])
         w.activateWindow();
     });
 
-    // ===== 模拟数据源自动运行 =====
+    // ===== 模拟数据源（点击“扫描开始”时启动）=====
     // 环境变量 SIM_CSV 指定录制文件（分号分隔）；未设置时使用默认 Downloads 录制文件。
-    // 存在录制文件时：启动后 3 秒自动开始回放 + 3D 开始绘制，整条链路用模拟数据运行。
+    // 存在录制文件时：注册给主界面，点击“扫描开始”后才开始回放 + 3D 开始绘制，
+    // 整条链路用模拟数据运行。--simulate-test 模式除外：启动后 3 秒自动开始回放并退出。
     {
         QStringList simFiles;
+        QTemporaryFile *testCsv = nullptr;
+        const bool simulateTest = parser.isSet("simulate-test");
         QByteArray simEnv = qgetenv("SIM_CSV");
-        if (!simEnv.isEmpty()) {
+        if (simulateTest) {
+            testCsv = new QTemporaryFile(&a);
+            testCsv->setAutoRemove(true);
+            if (testCsv->open()) {
+                QTextStream out(testCsv);
+                out << "X,Y,Z,A,B,C,SI";
+                for (int i = 1; i <= 49; ++i)
+                    out << ",AMP_" << i << ",TOF_" << i;
+                out << ",BEAM,LX,LY\n";
+                for (int row = 0; row < 250; ++row) {
+                    out << row * 0.1 << ',' << row * 0.05 << ',' << 10.0 + row * 0.01
+                        << ",0,0,0," << 0.5 + 0.1 * qSin(row / 20.0);
+                    for (int i = 0; i < 49; ++i)
+                        out << ',' << (0.2 + 0.001 * row + i * 0.002)
+                            << ',' << (1.0 + i * 0.01);
+                    out << ",49," << row * 0.1 << ',' << row * 0.05 << '\n';
+                }
+                out.flush();
+                testCsv->flush();
+                testCsv->close();
+                simFiles << testCsv->fileName();
+                qDebug() << "[AutoSim] using built-in test data:" << testCsv->fileName();
+            }
+        } else if (!simEnv.isEmpty()) {
             simFiles = QString::fromLocal8Bit(simEnv).split(';', Qt::SkipEmptyParts);
         } else {
             const QString def1 = "C:/Users/23714/Downloads/scan_20260717_141034.csv";
@@ -121,20 +160,28 @@ int main(int argc, char *argv[])
         if (!simFiles.isEmpty()) {
             SimDataPlayer *sim = new SimDataPlayer(&a);
             if (sim->loadCsv(simFiles)) {
+                // 交由主界面在点击“扫描开始”时启动模拟数据源
+                w.setSimulationPlayer(sim);
                 QObject::connect(sim, &SimDataPlayer::finished, &a, [&]() {
-                    qDebug() << "[AutoSim] 模拟回放结束，结束绘制";
+                    qDebug() << "[AutoSim] simulation finished; stopping drawing";
                     if (w2.getMainWindow3())
                         w2.getMainWindow3()->finishDrawing();
+                    if (simulateTest)
+                        QTimer::singleShot(200, &a, &QCoreApplication::quit);
                 });
-                QTimer::singleShot(3000, &a, [&]() {
-                    qDebug() << "[AutoSim] 启动模拟数据源并开始绘制";
-                    sim->start();
-                    if (w2.getMainWindow3())
-                        w2.getMainWindow3()->startDrawing();
-                });
+                if (simulateTest) {
+                    QTimer::singleShot(3000, &a, [&]() {
+                        qDebug() << "[AutoSim] starting simulation and drawing";
+                        sim->start();
+                        if (w2.getMainWindow3())
+                            w2.getMainWindow3()->startDrawing();
+                    });
+                } else {
+                    qDebug() << "[AutoSim] simulation ready; will start on scan-start click";
+                }
             }
         } else {
-            qDebug() << "[AutoSim] 未找到录制文件，跳过模拟";
+            qDebug() << "[AutoSim] no recording file found; simulation skipped";
         }
     }
 

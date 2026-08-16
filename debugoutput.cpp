@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QTextStream>
 #include <QtConcurrent/QtConcurrent>
+#include <QPointer>
 
 // 静态成员定义（只在这里定义一次）
 DebugOutput* DebugOutput::instance = nullptr;
@@ -183,13 +184,21 @@ void DebugOutput::messageHandler(QtMsgType type, const QMessageLogContext& conte
 
     QString timestamped = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss") + " >> " + msg;
 
+    // messageHandler 可能被任意工作线程（如 Scan 线程）调用，
+    // QLineEdit 只能在主线程操作，这里把控件更新投递到主线程执行，
+    // 避免跨线程访问 Qt 控件导致死锁/卡死。
     if (instance) {
-        for (QLineEdit* edit : instance->m_outputEdits) {
-            if (edit) {
-                edit->setText(timestamped);
-                edit->home(false);
+        QPointer<DebugOutput> guard(instance);
+        QMetaObject::invokeMethod(instance, [guard, timestamped]() {
+            if (!guard)
+                return;
+            for (QLineEdit* edit : guard->m_outputEdits) {
+                if (edit) {
+                    edit->setText(timestamped);
+                    edit->home(false);
+                }
             }
-        }
+        }, Qt::QueuedConnection);
     }
 
     QtConcurrent::run([timestamped]() {

@@ -1,11 +1,5 @@
 # Build output
 build/
-debug/
-release/
-Makefile
-Makefile.Debug
-Makefile.Release
-.qmake.stash
 
 # Compiled / generated files
 *.obj
@@ -28,5 +22,7 @@ ui_*.h
 compile_commands.json
 
 # Independent nested git repositories (managed in their own repos)
-3DScan/
+3dscan/
 phaselink_code/
+global/
+logs/
