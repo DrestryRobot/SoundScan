@@ -149,6 +149,42 @@ MainWindow1::MainWindow1(QWidget *parent)
     ui->lineEdit_3->setPlaceholderText(tr("请输入新建的文件名称（*.CATPart, *.CATProduct）"));
     ui->lineEdit_2->setPlaceholderText(tr("显示新建和打开的文件路径"));
     ui->lineEdit_4->setPlaceholderText(tr("显示保存和关闭的文件路径"));
+
+    // 恢复命令看门狗：暂停恢复偶发失效（PLC 不接受恢复命令、机器人不动）时，
+    // 检测到机器人位姿未变化就按“先暂停8、再开始1”的可靠序列自动重发。
+    m_resumeWatchdogTimer = new QTimer(this);
+    m_resumeWatchdogTimer->setInterval(2000);
+    connect(m_resumeWatchdogTimer, &QTimer::timeout, this, [this]() {
+        if (!m_resumeWatchdogArmed) {
+            m_resumeWatchdogTimer->stop();
+            return;
+        }
+        // 位姿有变化说明机器人已恢复运动，关闭看门狗
+        if (fabs(robot_x - m_resumeWx) > 1e-3 ||
+            fabs(robot_y - m_resumeWy) > 1e-3 ||
+            fabs(robot_z - m_resumeWz) > 1e-3) {
+            m_resumeWatchdogArmed = false;
+            m_resumeWatchdogTimer->stop();
+            qDebug() << "[ScanCtrl] 恢复看门狗: 机器人已恢复运动";
+            return;
+        }
+        if (++m_resumeWatchdogTries > 3) {
+            m_resumeWatchdogArmed = false;
+            m_resumeWatchdogTimer->stop();
+            qWarning() << "[ScanCtrl] 恢复看门狗: 重试 3 次后机器人仍未动，请检查 PLC";
+            return;
+        }
+        qDebug() << "[ScanCtrl] 恢复看门狗: 位姿未变化, 重发恢复命令 (try"
+                 << m_resumeWatchdogTries << ")";
+        adsClient.setIntVal(0x5E256, 8);   // 先回到 PLC 确认过的暂停态
+        QTimer::singleShot(300, this, [this]() {
+            if (!m_resumeWatchdogArmed) return;
+            adsClient.setIntVal(0x5E256, 1);   // 重新发送开始命令
+            m_resumeWx = robot_x;
+            m_resumeWy = robot_y;
+            m_resumeWz = robot_z;
+        });
+    });
 }
 
 MainWindow1::~MainWindow1()
@@ -1992,14 +2028,9 @@ void MainWindow1::start3DChecker()
 
 void MainWindow1::onRequestStartDrawing()
 {
-    qDebug() << "[3DChecker] onRequestStartDrawing 进入:"
-             << " scan_continue_flag=" << scan_continue_flag
-             << " pending=" << m_scanStartPending
-             << " var0=" << adsClient.getIntVal(0);
 
     // 仅在扫描进行中响应“机器人开始扫板”信号，避免启动阶段/结束后的误触发
     if (scan_continue_flag) {
-        qDebug() << "[3DChecker] 忽略开始信号（当前未在扫描）: var0->0";
         return;
     }
 
@@ -2011,20 +2042,16 @@ void MainWindow1::onRequestStartDrawing()
             if (mw3)
                 mw3->startDrawing();
         }
-        qDebug() << "[3DChecker] startDrawing 调用完成";
     }
 
     m_start = true;
 
-    qDebug() << "[3DChecker] 开始绘制: robot_ipoc=" << robot_ipoc
-             << " amp[0]=" << amp[0] << " si=" << si;
 }
 
 void MainWindow1::onRequestStopDrawing()
 {
     // 仅在扫描进行中响应停止信号，避免启动阶段 var0 跳变提前发送停止命令
     if (scan_continue_flag) {
-        qDebug() << "[3DChecker] 忽略停止信号（当前未在扫描）: var0->nonzero";
         return;
     }
 
@@ -2033,7 +2060,6 @@ void MainWindow1::onRequestStopDrawing()
     // 扫描结束
     MainWindow1::on_pushButton_20_clicked();
 
-    qDebug() << "[3DChecker] 停止绘制: robot_ipoc=" << robot_ipoc;
 }
 
 // 打开文件
@@ -2620,7 +2646,23 @@ void MainWindow1::on_pushButton_9_clicked()
 // 扫描开始（外部调用）
 void MainWindow1::on_pushButton_9()
 {
-    MainWindow1::on_pushButton_28_clicked(); // 龙门电机失能
+    // 防重入：已处于扫描中（机器人已启动）时重复点击开始，直接忽略，
+    // 避免重复下发 0x5E256 导致 PLC 状态错乱
+    if (!scan_continue_flag && adsClient.getIntVal(0) != 0) {
+        return;
+    }
+
+    // 暂停后恢复：不要失能/复位龙门电机。暂停时电机处于使能状态，
+    // 失能+复位后需要重新使能才能运动，而 PLC 的“继续”流程不会重新使能，
+    // 结果是机器人收到恢复命令也不动（日志中 var0 不再跳变）。
+    bool resuming = false;
+    if (MainWindow2::s_instance) {
+        MainWindow3 *mw3 = MainWindow2::s_instance->getMainWindow3();
+        if (mw3 && mw3->isDrawPaused())
+            resuming = true;
+    }
+    if (!resuming)
+        MainWindow1::on_pushButton_28_clicked(); // 龙门电机失能
 
     adsClient.setIntVal(0x5EB08, ui->comboBox_2->currentIndex()+1);
 
@@ -2628,8 +2670,28 @@ void MainWindow1::on_pushButton_9()
     {
         scan_continue_flag = false;
         adsClient.setIntVal(0x5E256, 1);
-        // 不立即开始绘制：等"机器人开始扫板"信号（PLC 变量0 跳变）到达后再触发
+        // 不立即开始绘制：等“机器人开始扫板”信号（PLC 变量0 跳变）到达后再触发
         m_scanStartPending = true;
+        // 恢复命令看门狗：仅暂停恢复时启用；机器人 2s 内位姿未变化则自动重发
+        if (resuming) {
+            m_resumeWatchdogArmed = true;
+            m_resumeWatchdogTries = 0;
+            m_resumeWx = robot_x;
+            m_resumeWy = robot_y;
+            m_resumeWz = robot_z;
+            if (m_resumeWatchdogTimer) m_resumeWatchdogTimer->start();
+        } else {
+            m_resumeWatchdogArmed = false;
+            if (m_resumeWatchdogTimer) m_resumeWatchdogTimer->stop();
+        }
+        // 暂停后恢复：3DScan 处于暂停绘制状态时直接恢复绘制。
+        // 暂停恢复时机器人已在板上继续运动，PLC var0 不会重新跳变，
+        // 只靠 m_scanStartPending 等 var0 触发 startDrawing 永远不会执行。
+        if (MainWindow2::s_instance) {
+            MainWindow3 *mw3 = MainWindow2::s_instance->getMainWindow3();
+            if (mw3 && mw3->isDrawPaused())
+                mw3->startDrawing();
+        }
     }
     // 调试：打印扫描开始写入/读回的 PLC 值
     qDebug() << "[ScanCtrl] 扫描开始: 0x5EB08=" << adsClient.getIntVal(0x5EB08)
@@ -2650,6 +2712,9 @@ void MainWindow1::on_pushButton_19()
     scan_continue_flag = true;
     adsClient.setIntVal(0x5E256, 8);
     m_scanStartPending = false;
+    // 暂停时解除恢复看门狗，避免暂停后旧的重试请求继续发命令
+    m_resumeWatchdogArmed = false;
+    if (m_resumeWatchdogTimer) m_resumeWatchdogTimer->stop();
 
     // 链接 3dscan：停止绘制（暂停，可继续）
     if (MainWindow2::s_instance) {
@@ -2675,6 +2740,8 @@ void MainWindow1::on_pushButton_20()
     adsClient.setIntVal(0x5E256, 8);
     adsClient.setIntVal(0x5EB08, 0);
     m_scanStartPending = false;
+    m_resumeWatchdogArmed = false;
+    if (m_resumeWatchdogTimer) m_resumeWatchdogTimer->stop();
 
     // 链接 3dscan：结束绘制
     if (MainWindow2::s_instance) {
@@ -2699,6 +2766,18 @@ void MainWindow1::on_pushButton_20()
 // 龙门开始
 void MainWindow1::on_pushButton_18_clicked()
 {
+    if (!scan_continue_flag) {
+        qDebug() << "[龙门开始] 正在扫描，禁止手动移动";
+        return;
+    }
+    // 清掉暂停/点动残留，避免上一条指令干扰本次移动
+    adsClient.setIntVal(0x5EBDF, 0);
+    adsClient.setIntVal(0x5EC2F, 0);
+    adsClient.setIntVal(0x5EBDB, 0);
+    adsClient.setIntVal(0x5EBDC, 0);
+    adsClient.setIntVal(0x5EC2B, 0);
+    adsClient.setIntVal(0x5EC2C, 0);
+
     if (ui->comboBox->currentText() == "绝对")
     {
         if (adsClient.getIntVal(0x67CE0) && adsClient.getIntVal(0x67D60) && ui->doubleSpinBox_3->text().toFloat() && !ui->doubleSpinBox_4->text().isEmpty() && !ui->doubleSpinBox_5->text().isEmpty()) // x 轴的使能状态 MotorStatusVary[0].bEnableStatus
@@ -2754,6 +2833,11 @@ void MainWindow1::on_pushButton_21_clicked()
 {
     adsClient.setIntVal(0x5EBDF, 1); // 给 x 轴电机上复位 MotorControlVary[0].bStop_do
     adsClient.setIntVal(0x5EC2F, 1); // 给 Y 轴电机上复位 MotorControlVary[2].bStop_do
+    // 同时清点动位，避免暂停后残留 bJog 把电机重新驱动起来
+    adsClient.setIntVal(0x5EBDB, 0);
+    adsClient.setIntVal(0x5EBDC, 0);
+    adsClient.setIntVal(0x5EC2B, 0);
+    adsClient.setIntVal(0x5EC2C, 0);
 }
 
 // 龙门回零
@@ -2768,6 +2852,13 @@ void MainWindow1::on_pushButton_22_clicked()
 
     if (reply == QMessageBox::Yes)
     {
+        // 执行移动前清掉暂停/点动残留，避免上一条指令干扰本次移动
+        adsClient.setIntVal(0x5EBDF, 0);
+        adsClient.setIntVal(0x5EC2F, 0);
+        adsClient.setIntVal(0x5EBDB, 0);
+        adsClient.setIntVal(0x5EBDC, 0);
+        adsClient.setIntVal(0x5EC2B, 0);
+        adsClient.setIntVal(0x5EC2C, 0);
         if (adsClient.getIntVal(0x67CE0) && adsClient.getIntVal(0x67D60) && ui->doubleSpinBox_3->text().toFloat())
         {
             adsClient.setFloatVal(0x5EBF4, ui->doubleSpinBox_3->text().toFloat()); // 给 x 轴电机赋值绝对移动速度 MotorControlVary[0].AbsoluteVelocity
@@ -2784,11 +2875,33 @@ void MainWindow1::on_pushButton_22_clicked()
 // 电机使能
 void MainWindow1::on_pushButton_27_clicked()
 {
-    if(scan_continue_flag && !ui->label_12->text().toInt())
-    {
-        adsClient.setIntVal(0x5EBD8, 1); // 给 x 轴电机上使能 MotorControlVary[0].bEnable
-        adsClient.setIntVal(0x5EC28, 1); // 给 Y 轴电机上使能 MotorControlVary[2].bEnable
+    if (!scan_continue_flag) {
+        qDebug() << "[电机使能] 当前正在扫描，无法使能（scan_continue_flag=false）";
+        return;
     }
+
+    // 直接读 PLC 程序号，避免依赖 100ms 轮询刷新的 label（旧值会导致“要等/要
+    // 先点扫描结束才能使能”的假象）。程序号非 0 表示任务尚未结束，禁止使能。
+    int progNo = adsClient.getIntVal(0x5EB08);
+    if (progNo != 0) {
+        qDebug() << "[电机使能] 当前任务号" << progNo
+                 << "非0，请先点击“扫描结束”再使能";
+        return;
+    }
+
+    // 先清复位位（避免上电后 bReset 残留导致使能被 PLC 拒绝），再上使能
+    adsClient.setIntVal(0x5EBE0, 0); // X bReset_do
+    adsClient.setIntVal(0x5EC30, 0); // Y bReset_do
+    adsClient.setIntVal(0x5EBD8, 1); // X bEnable
+    adsClient.setIntVal(0x5EC28, 1); // Y bEnable
+
+    // 回读使能状态确认，100ms 后检查 PLC 是否接受
+    QTimer::singleShot(100, this, [this]() {
+        bool xOn = adsClient.getIntVal(0x67CE0) != 0;
+        bool yOn = adsClient.getIntVal(0x67D60) != 0;
+        qDebug() << "[电机使能] 回读状态 X=" << xOn << " Y=" << yOn
+                 << (xOn && yOn ? "（使能成功）" : "（使能未生效，请检查急停/复位/任务号）");
+    });
 }
 
 // 电机失能
@@ -2808,6 +2921,13 @@ void MainWindow1::on_pushButton_28_clicked()
 // X++按下
 void MainWindow1::on_pushButton_23_pressed()
 {
+    if (!scan_continue_flag || adsClient.getIntVal(0x5EB08) != 0
+        || adsClient.getIntVal(0x67CE0) == 0) {
+        qDebug() << "[点动] 扫描中/任务号非0/未使能，已忽略 X+";
+        return;
+    }
+    adsClient.setIntVal(0x5EBDF, 0); // 清 X 停止
+    adsClient.setIntVal(0x5EBDC, 0); // 清 X 反向点动（互斥）
     adsClient.setFloatVal(0x5EBE4, ui->doubleSpinBox_2->text().toFloat()); // 设置 x 轴的点动速度 MotorControlVary[0].JogVelocity
 
     adsClient.setIntVal(0x5EBDB, 1); // 控制 x 轴向前点动 MotorControlVary[0].bJogForwards
@@ -2824,6 +2944,13 @@ void MainWindow1::on_pushButton_23_released()
 // X--按下
 void MainWindow1::on_pushButton_24_pressed()
 {
+    if (!scan_continue_flag || adsClient.getIntVal(0x5EB08) != 0
+        || adsClient.getIntVal(0x67CE0) == 0) {
+        qDebug() << "[点动] 扫描中/任务号非0/未使能，已忽略 X-";
+        return;
+    }
+    adsClient.setIntVal(0x5EBDF, 0); // 清 X 停止
+    adsClient.setIntVal(0x5EBDB, 0); // 清 X 正向点动（互斥）
     adsClient.setFloatVal(0x5EBE4, ui->doubleSpinBox_2->text().toFloat()); // 设置 x 轴的点动速度 MotorControlVary[0].JogVelocity
 
     adsClient.setIntVal(0x5EBDC, 1); // 控制 x 轴向后点动 MotorControlVary[0].bJogBackwards
@@ -2840,6 +2967,13 @@ void MainWindow1::on_pushButton_24_released()
 // Y++按下
 void MainWindow1::on_pushButton_25_pressed()
 {
+    if (!scan_continue_flag || adsClient.getIntVal(0x5EB08) != 0
+        || adsClient.getIntVal(0x67D60) == 0) {
+        qDebug() << "[点动] 扫描中/任务号非0/未使能，已忽略 Y+";
+        return;
+    }
+    adsClient.setIntVal(0x5EC2F, 0); // 清 Y 停止
+    adsClient.setIntVal(0x5EC2C, 0); // 清 Y 反向点动（互斥）
     adsClient.setFloatVal(0x5EC34, ui->doubleSpinBox->text().toFloat()); // 设置 Y 轴的点动速度 MotorControlVary[2].JogVelocity
 
     adsClient.setIntVal(0x5EC2B, 1); // 控制 y 轴向前点动 MotorControlVary[2].bJogForwards
@@ -2856,6 +2990,13 @@ void MainWindow1::on_pushButton_25_released()
 // Y--按下
 void MainWindow1::on_pushButton_26_pressed()
 {
+    if (!scan_continue_flag || adsClient.getIntVal(0x5EB08) != 0
+        || adsClient.getIntVal(0x67D60) == 0) {
+        qDebug() << "[点动] 扫描中/任务号非0/未使能，已忽略 Y-";
+        return;
+    }
+    adsClient.setIntVal(0x5EC2F, 0); // 清 Y 停止
+    adsClient.setIntVal(0x5EC2B, 0); // 清 Y 正向点动（互斥）
     adsClient.setFloatVal(0x5EC34, ui->doubleSpinBox->text().toFloat()); // 设置 Y 轴的点动速度 MotorControlVary[2].JogVelocity
 
     adsClient.setIntVal(0x5EC2C, 1); // 控制 y 轴向后点动 MotorControlVary[2].bJogBackwards

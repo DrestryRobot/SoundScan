@@ -145,9 +145,9 @@
    <widget class="ViewWidget" name="View_1" native="true">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>20</x>
       <y>80</y>
-      <width>1011</width>
+      <width>1001</width>
       <height>591</height>
      </rect>
     </property>
@@ -163,9 +163,9 @@
    <widget class="QLabel" name="label_16">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>20</x>
       <y>20</y>
-      <width>1011</width>
+      <width>1001</width>
       <height>51</height>
      </rect>
     </property>
@@ -249,9 +249,9 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
    <widget class="QLabel" name="label_18">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>20</x>
       <y>680</y>
-      <width>1011</width>
+      <width>1001</width>
       <height>51</height>
      </rect>
     </property>
@@ -292,9 +292,9 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
    <widget class="ViewWidget" name="View_2" native="true">
     <property name="geometry">
      <rect>
-      <x>40</x>
+      <x>50</x>
       <y>740</y>
-      <width>961</width>
+      <width>951</width>
       <height>521</height>
      </rect>
     </property>
@@ -347,9 +347,9 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
    <widget class="RulerWidget" name="ruler_distance_s" native="true">
     <property name="geometry">
      <rect>
-      <x>40</x>
+      <x>50</x>
       <y>1260</y>
-      <width>961</width>
+      <width>951</width>
       <height>30</height>
      </rect>
     </property>
@@ -369,7 +369,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
    <widget class="RulerWidget" name="ruler_range" native="true">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>20</x>
       <y>740</y>
       <width>30</width>
       <height>521</height>

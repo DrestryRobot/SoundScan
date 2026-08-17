@@ -172,6 +172,12 @@ void MainWindow2::setupChildWindow()
     }
 
     mainWindow3->show();
+
+    // 联动：3DScan 停止扫描时同步暂停 SoundScan 扫描
+    connect(mainWindow3, &MainWindow3::requestPauseScan, this, [this]() {
+        if (mainWindow)
+            mainWindow->on_pushButton_19();
+    });
 }
 
 // 扫描开始（快捷指令）

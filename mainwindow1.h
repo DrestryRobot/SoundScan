@@ -321,6 +321,12 @@ private:
     bool scan_continue_flag = true;
     // 扫描开始后等待“机器人开始扫板”信号，信号到达才触发 3dscan 开始绘制
     bool m_scanStartPending = false;
+    // 恢复命令看门狗：暂停恢复偶发失效（PLC 不接受恢复命令、机器人不动）时，
+    // 检测到机器人位姿未变化就按“先暂停8、再开始1”的可靠序列自动重试。
+    QTimer *m_resumeWatchdogTimer = nullptr;
+    bool m_resumeWatchdogArmed = false;
+    int m_resumeWatchdogTries = 0;
+    double m_resumeWx = 0, m_resumeWy = 0, m_resumeWz = 0;
 
     // 电机失能检测
     double m_lastCheckX = 0.0;

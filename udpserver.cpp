@@ -43,6 +43,7 @@ void UdpServer::readPendingDatagrams()
 
 void UdpServer::parseXmlData(const QByteArray &xmlData)
 {
+    QMutexLocker locker(&g_scanDataMutex);
     QXmlStreamReader xml(xmlData);
     static double a1,a2,a3,a4,a5,a6;
     while (!xml.atEnd()) {

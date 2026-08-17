@@ -72,8 +72,11 @@ void AdsStatusPoller::poll()
     // 龙门位置（同步到全局量，供 3D 使用）
     s.longmenX = adsClient.getFloatVal(0x67D18);
     s.longmenY = adsClient.getFloatVal(0x67D98);
-    longmen[0] = s.longmenX;
-    longmen[1] = s.longmenY;
+    {
+        QMutexLocker locker(&g_scanDataMutex);
+        longmen[0] = s.longmenX;
+        longmen[1] = s.longmenY;
+    }
 
     // 临时诊断：每 2 秒输出一次，确认轮询线程在跑
     static int diagCount = 0;

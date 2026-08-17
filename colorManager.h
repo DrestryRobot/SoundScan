@@ -30,8 +30,6 @@ public:
     QColor globalBgColor() const { return m_globalBgColor; }
     QColor globalLineColor() const { return m_globalLineColor; }
 
-
-
 signals:
     void colorsChanged(const QColor &bgColor, const QColor &lineColor);
 
