@@ -13,7 +13,7 @@ DEFINES += NOMINMAX
 # when the build directory is too deep for relative paths.
 QMAKE_PROJECT_DEPTH = 0
 
-# Shared NDT code lives in the Phaselink subproject (same as 3dscan:
+# Shared NDT code lives in the Phaselink subproject (same as 3DScan:
 # sources below are compiled from that folder via relative paths).
 INCLUDEPATH += $$PWD/Phaselink
 
@@ -63,10 +63,10 @@ LIBS += -lvtkGUISupportQt-9.6 \
         -lvtkViewsQt-9.6 \
         -lvtksys-9.6
 
-# ============ CUDA (3dscan/algorithm.cu) ============
+# ============ CUDA (3DScan/algorithm.cu) ============
 CUDA_DIR = C:/CUDA/v13.3
 CUDA_ARCH = sm_86
-INCLUDEPATH += $$PWD $$PWD/3dscan $$CUDA_DIR/include $$CUDA_DIR/common/inc
+INCLUDEPATH += $$PWD $$PWD/3DScan $$CUDA_DIR/include $$CUDA_DIR/common/inc
 QMAKE_LIBDIR += $$CUDA_DIR/lib/x64
 LIBS += -lcudart -lcublas -lcufft
 CONFIG(debug, debug|release) {
@@ -76,12 +76,12 @@ CONFIG(debug, debug|release) {
 }
 # Compile algorithm.cu with nvcc before linking (works for any build dir).
 cuda_prebuild.target = $$OUT_PWD/algorithm.obj
-cuda_prebuild.commands = cmd /c "\"$$CUDA_DIR/bin/nvcc.exe --machine 64 -arch=$$CUDA_ARCH -c -o $$OUT_PWD/algorithm.obj $$PWD/3dscan/algorithm.cu -Xcompiler $$CUDA_XCOMPILER\""
-cuda_prebuild.depends = $$PWD/3dscan/algorithm.cu $$PWD/3dscan/algorithm.h
+cuda_prebuild.commands = cmd /c "\"$$CUDA_DIR/bin/nvcc.exe --machine 64 -arch=$$CUDA_ARCH -c -o $$OUT_PWD/algorithm.obj $$PWD/3DScan/algorithm.cu -Xcompiler $$CUDA_XCOMPILER\""
+cuda_prebuild.depends = $$PWD/3DScan/algorithm.cu $$PWD/3DScan/algorithm.h
 QMAKE_EXTRA_TARGETS += cuda_prebuild
 PRE_TARGETDEPS += $$OUT_PWD/algorithm.obj
 OBJECTS += $$OUT_PWD/algorithm.obj
-OTHER_FILES += $$PWD/3dscan/algorithm.cu
+OTHER_FILES += $$PWD/3DScan/algorithm.cu
 
 # SoundScan-only sources
 SOURCES += \
@@ -89,26 +89,25 @@ SOURCES += \
     ads_poller.cpp \
     ads_read_thread.cpp \
     colormanager.cpp \
-    Phaselink/datadispatch.cpp \
     debugoutput.cpp \
     delmiaworker.cpp \
-    Phaselink/dialog/viewmodel.cpp \
     main.cpp \
     mainwindow1.cpp \
-    Phaselink/mainwindow.cpp \
     mainwindow2.cpp \
-    3dscan/mainwindow3.cpp \
-    3dscan/datapanel.cpp \
-    3dscan/scandata.cpp \
-    3dscan/scan.cpp \
-    3dscan/vtkvboactor.cpp \
+    3DScan/mainwindow3.cpp \
+    3DScan/datapanel.cpp \
+    3DScan/scandata.cpp \
+    3DScan/scan.cpp \
+    3DScan/vtkvboactor.cpp \
     tcpserver.cpp \
     udpserver.cpp
 
-# Shared code compiled from Phaselink (subproject, like 3dscan)
+# Shared code compiled from Phaselink (subproject, like 3DScan)
 SOURCES += \
+    Phaselink/mainwindow.cpp \
     Phaselink/app.cpp \
     Phaselink/ndtbase.cpp \
+    Phaselink/datadispatch.cpp \
     Phaselink/UI/scanning.cpp \
     Phaselink/UI/UT/acg_tcg_widget.cpp \
     Phaselink/UI/UT/essentialwidget.cpp \
@@ -127,32 +126,33 @@ SOURCES += \
     Phaselink/dialog/rulerwidget.cpp \
     Phaselink/dialog/sider.cpp \
     Phaselink/dialog/viewwidget.cpp \
+    Phaselink/dialog/viewmodel.cpp \
     Phaselink/dialog/viewworker.cpp
 
 HEADERS += \
+    3DScan/scandata.h \
+    3DScan/mainwindow3.h \
+    3DScan/datapanel.h \
+    3DScan/scan.h \
+    3DScan/algorithm.h \
+    3DScan/vtkvboactor.h \
     ads_client.h \
     ads_poller.h \
     ads_read_thread.h \
+    tcpserver.h \
+    udpserver.h \
     colormanager.h \
     debugoutput.h \
     delmiaworker.h \
-    Phaselink/dialog/viewmodel.h \
-    3dscan/scandata.h \
-    Phaselink/datadispatch.h \
     mainwindow1.h \
-    Phaselink/mainwindow.h \
-    mainwindow2.h \
-    3dscan/mainwindow3.h \
-    3dscan/datapanel.h \
-    3dscan/scan.h \
-    3dscan/algorithm.h \
-    3dscan/vtkvboactor.h \
-    tcpserver.h \
-    udpserver.h
+    mainwindow2.h
+
 
 HEADERS += \
+    Phaselink/mainwindow.h \
     Phaselink/app.h \
     Phaselink/ndtbase.h \
+    Phaselink/datadispatch.h \
     Phaselink/UI/scanning.h \
     Phaselink/UI/UT/acg_tcg_widget.h \
     Phaselink/UI/UT/essentialwidget.h \
@@ -172,9 +172,11 @@ HEADERS += \
     Phaselink/dialog/rulerwidget.h \
     Phaselink/dialog/sider.h \
     Phaselink/dialog/viewwidget.h \
+    Phaselink/dialog/viewmodel.h \
     Phaselink/dialog/viewworker.h
 
 FORMS += \
+    Phaselink/mainwindow.ui \
     Phaselink/UI/scanning.ui \
     Phaselink/UI/UT/acg_tcg_widget.ui \
     Phaselink/UI/UT/essentialwidget.ui \
@@ -188,10 +190,9 @@ FORMS += \
     Phaselink/dialog/rulerwidget.ui \
     Phaselink/dialog/sider.ui \
     Phaselink/dialog/viewwidget.ui \
+    3DScan/mainwindow3.ui \
     mainwindow1.ui \
-    Phaselink/mainwindow.ui \
-    mainwindow2.ui \
-    3dscan/mainwindow3.ui
+    mainwindow2.ui
 
 RESOURCES += resources.qrc \
     Phaselink/Qss.qrc

@@ -1,5 +1,5 @@
 #include "colormanager.h"
-#include "dialog/viewwidget.h"
+#include "Phaselink/dialog/viewwidget.h"
 #include <QtGlobal>
 
 ColorManager* ColorManager::instance()

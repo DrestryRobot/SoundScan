@@ -3,9 +3,8 @@
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QThread>
-
 #include <QDateTime>
-#include "3dscan/scandata.h"
+#include "3DScan/scandata.h"
 
 UdpServer::UdpServer(QObject *parent) : QObject(parent)
 {

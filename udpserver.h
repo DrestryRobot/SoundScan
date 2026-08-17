@@ -4,8 +4,8 @@
 #include <QObject>
 #include <QUdpSocket>
 #include <QXmlStreamReader>
-#include "dialog/viewmodel.h"
 #include <QVector>
+#include "Phaselink/dialog/viewmodel.h"
 
 // udpserver.h 中添加
 class UltrasoundWindow;  // 前向声明

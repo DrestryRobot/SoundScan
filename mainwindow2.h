@@ -5,12 +5,11 @@
 #include <QMainWindow>
 #include <QDockWidget>
 #include <QTranslator>
-#include "datadispatch.h"
-#include <mainwindow1.h>
+#include "Phaselink/datadispatch.h"
+#include "mainwindow1.h"
 #include "ui_mainwindow2.h"
-#include "dialog/viewmodel.h"
-#include "dialog/viewwidget.h"
-
+#include "Phaselink/dialog/viewmodel.h"
+#include "Phaselink/dialog/viewwidget.h"
 #include <mainwindow3.h>
 
 namespace Ui {

@@ -2,7 +2,7 @@
 #include "mainwindow2.h"
 #include "ui_mainwindow1.h"
 #include "Phaselink/datadispatch.h"
-#include "3dscan/scandata.h"
+#include "3DScan/scandata.h"
 #include "ads_poller.h"
 #include <QPointer>
 #include <QProcess>
