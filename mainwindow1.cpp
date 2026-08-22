@@ -3682,6 +3682,11 @@ void MainWindow1::on_pushButton_31_clicked()
                     line.replace("TOOL_NO 0", "TOOL_NO 1");
                 }
 
+                // // 新增：将 TOOL_NO 0 替换为 TOOL_NO 1
+                // if (line.contains("BASE_NO 0")) {
+                //     line.replace("BASE_NO 0", "BASE_NO 1");
+                // }
+
                 out << line << "\n";
             }
         }
@@ -3698,33 +3703,38 @@ void MainWindow1::on_pushButton_31_clicked()
                     line.replace(" CONT ", " ");
                 }
 
-                // ===== 移除 Tag0 行的 CONT =====
-                if (line.contains(";FOLD LIN Tag1 CONT") && line.contains("Vel= 0.5 m/s")) {
-                    isTag1Block = true;
-                    line.replace("Vel= 0.5 m/s", "Vel= 0.1 m/s");
-                }
+                // // ===== 移除 Tag0 行的 CONT =====
+                // if (line.contains(";FOLD LIN Tag1 CONT") && line.contains("Vel= 0.5 m/s")) {
+                //     isTag1Block = true;
+                //     line.replace("Vel= 0.5 m/s", "Vel= 0.1 m/s");
+                // }
 
-                // 替换 %P 参数字段中的速度值
-                if (line.contains(";FOLD LIN Tag1 CONT") && line.contains("%P")) {
-                    QRegularExpression pVelRegex(R"(5:\s*([\d.]+))");
-                    line.replace(pVelRegex, QString("5:%1").arg(0.1));
-                }
+                // // 替换 %P 参数字段中的速度值
+                // if (line.contains(";FOLD LIN Tag1 CONT") && line.contains("%P")) {
+                //     QRegularExpression pVelRegex(R"(5:\s*([\d.]+))");
+                //     line.replace(pVelRegex, QString("5:%1").arg(0.1));
+                // }
 
-                if (trimmed == ";ENDFOLD") {
-                    isTag1Block = false; // 退出当前块
-                }
+                // if (trimmed == ";ENDFOLD") {
+                //     isTag1Block = false; // 退出当前块
+                // }
 
-                // ===== 新增：修改 BAS(#VEL_CP,0.5) =====
-                // 只有在 Tag1 块内部，并且当前行包含 BAS(#VEL_CP 时才修改
-                if (isTag1Block && line.contains("BAS(#VEL_CP,")) {
-                    // 将 0.5 替换为 0.2。使用正则表达式更精确，但简单替换也可行
-                    line.replace("BAS(#VEL_CP,0.5)", "BAS(#VEL_CP,0.1)");
-                }
+                // // ===== 新增：修改 BAS(#VEL_CP,0.5) =====
+                // // 只有在 Tag1 块内部，并且当前行包含 BAS(#VEL_CP 时才修改
+                // if (isTag1Block && line.contains("BAS(#VEL_CP,")) {
+                //     // 将 0.5 替换为 0.2。使用正则表达式更精确，但简单替换也可行
+                //     line.replace("BAS(#VEL_CP,0.5)", "BAS(#VEL_CP,0.1)");
+                // }
 
                 // 新增：将 Tool[0] 替换为 Tool[1]
                 if (line.contains("Tool[0]")) {
                     line.replace("Tool[0]", "Tool[1]");
                 }
+
+                // // 新增：将 Tool[0] 替换为 Tool[1]
+                // if (line.contains("Base[0]")) {
+                //     line.replace("Base[0]", "Base[1]");
+                // }
 
                 // 开启 RSI
                 if (trimmed.startsWith("DEF ") && trimmed.contains("(")) {
