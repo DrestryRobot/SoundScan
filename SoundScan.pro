@@ -64,7 +64,7 @@ LIBS += -lvtkGUISupportQt-9.6 \
         -lvtksys-9.6
 
 # ============ CUDA (3DScan/algorithm.cu) ============
-CUDA_DIR = C:/CUDA/v13.3
+CUDA_DIR = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3
 CUDA_ARCH = sm_86
 INCLUDEPATH += $$PWD $$PWD/3DScan $$CUDA_DIR/include $$CUDA_DIR/common/inc
 QMAKE_LIBDIR += $$CUDA_DIR/lib/x64
