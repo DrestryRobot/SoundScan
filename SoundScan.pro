@@ -25,10 +25,6 @@ LIBS += -L"C:\TwinCAT\AdsApi\TcAdsDll\x64\lib" -lTcAdsDll
 INCLUDEPATH += "C:\Phaselink\include"
 LIBS += -L"C:\Phaselink\lib" -lclient
 
-# Python 3.13
-INCLUDEPATH += C:/Users/23714/AppData/Local/Programs/Python/Python313/include
-LIBS += -LC:/Users/23714/AppData/Local/Programs/Python/Python313/libs -lpython313
-
 # VTK 9.6
 INCLUDEPATH += $$"C:/Program Files (x86)/VTK/include/vtk-9.6"
 LIBS += -L$$"C:/Program Files (x86)/VTK/lib"
@@ -64,10 +60,10 @@ LIBS += -lvtkGUISupportQt-9.6 \
         -lvtksys-9.6
 
 # ============ CUDA (3DScan/algorithm.cu) ============
-CUDA_DIR = C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3
+CUDA_DIR = "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3"
 CUDA_ARCH = sm_86
-INCLUDEPATH += $$PWD $$PWD/3DScan $$CUDA_DIR/include $$CUDA_DIR/common/inc
-QMAKE_LIBDIR += $$CUDA_DIR/lib/x64
+INCLUDEPATH += $$PWD $$PWD/3DScan "$$CUDA_DIR/include" "$$CUDA_DIR/common/inc"
+QMAKE_LIBDIR += "$$CUDA_DIR/lib/x64"
 LIBS += -lcudart -lcublas -lcufft
 CONFIG(debug, debug|release) {
     CUDA_XCOMPILER = /MDd
@@ -76,7 +72,7 @@ CONFIG(debug, debug|release) {
 }
 # Compile algorithm.cu with nvcc before linking (works for any build dir).
 cuda_prebuild.target = $$OUT_PWD/algorithm.obj
-cuda_prebuild.commands = cmd /c "\"$$CUDA_DIR/bin/nvcc.exe --machine 64 -arch=$$CUDA_ARCH -c -o $$OUT_PWD/algorithm.obj $$PWD/3DScan/algorithm.cu -Xcompiler $$CUDA_XCOMPILER\""
+cuda_prebuild.commands = $$shell_quote($$CUDA_DIR/bin/nvcc.exe) --machine 64 -arch=$$CUDA_ARCH -c -o $$shell_quote($$OUT_PWD/algorithm.obj) $$shell_quote($$PWD/3DScan/algorithm.cu) -Xcompiler $$CUDA_XCOMPILER
 cuda_prebuild.depends = $$PWD/3DScan/algorithm.cu $$PWD/3DScan/algorithm.h
 QMAKE_EXTRA_TARGETS += cuda_prebuild
 PRE_TARGETDEPS += $$OUT_PWD/algorithm.obj
