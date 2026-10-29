@@ -3,7 +3,6 @@
 #include "ads_client.h"
 #include "3dscan/scandata.h"
 
-#include <QDebug>
 
 // adsClient 全局实例定义在 mainwindow1.cpp
 extern ads_client adsClient;
@@ -77,12 +76,6 @@ void AdsStatusPoller::poll()
         longmen[0] = s.longmenX;
         longmen[1] = s.longmenY;
     }
-
-    // 临时诊断：每 2 秒输出一次，确认轮询线程在跑
-    static int diagCount = 0;
-    if (++diagCount % 20 == 1)
-        qDebug() << "[AdsPoll] poll ok, xPos=" << s.xPos << " yPos=" << s.yPos
-                 << " progNo=" << s.progNo;
 
     emit statusReady(s);
 }

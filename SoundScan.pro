@@ -83,7 +83,6 @@ OTHER_FILES += $$PWD/3DScan/algorithm.cu
 SOURCES += \
     ads_client.cpp \
     ads_poller.cpp \
-    ads_read_thread.cpp \
     colormanager.cpp \
     debugoutput.cpp \
     delmiaworker.cpp \
@@ -134,7 +133,6 @@ HEADERS += \
     3DScan/vtkvboactor.h \
     ads_client.h \
     ads_poller.h \
-    ads_read_thread.h \
     tcpserver.h \
     udpserver.h \
     colormanager.h \

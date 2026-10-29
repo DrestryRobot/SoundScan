@@ -1,7 +1,6 @@
 ﻿#include "udpserver.h"
 #include <QNetworkDatagram>
 #include <QDebug>
-#include <QElapsedTimer>
 #include <QThread>
 #include <QDateTime>
 #include "3DScan/scandata.h"
@@ -92,21 +91,6 @@ void UdpServer::parseXmlData(const QByteArray &xmlData)
             //                 .arg(robot_c, 0, 'f', 4);
 
             robot_ipoc = ipoc;
-
-            // 调试：每秒统计一次机器人数据帧率/IPOC/位姿
-            static int robotFrameCount = 0;
-            static QElapsedTimer robotStatTimer;
-            if (!robotStatTimer.isValid())
-                robotStatTimer.start();
-            robotFrameCount++;
-            if (robotStatTimer.elapsed() >= 1000) {
-                qDebug() << "[Robot] 每秒帧数:" << robotFrameCount
-                         << " IPOC:" << robot_ipoc
-                         << " 位姿:" << robot_x << robot_y << robot_z
-                         << robot_a << robot_b << robot_c;
-                robotFrameCount = 0;
-                robotStatTimer.restart();
-            }
 
             QString responseXml = R"(<Sen Type="ImFree"><RKorr A1="0.0000" A2="0.0000" A3="0.0000" A4="0.0000" A5="0.0000" A6="0.0000" /><IPOC>%1</IPOC></Sen>)";
 
